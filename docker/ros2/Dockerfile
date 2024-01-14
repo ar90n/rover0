@@ -1,4 +1,4 @@
-FROM ubuntu:22.04
+FROM --platform=linux/arm64 ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -27,3 +27,18 @@ RUN chmod +x /etc/profile.d/90-setup-ros2.sh
 
 # Clean up
 RUN rm -rf /var/lib/apt/lists/*
+
+# Add entrypoint
+RUN cat <<EOF > /opt/entrypoint.sh
+#!/bin/bash
+
+for script in /etc/profile.d/*.sh; do
+    if [ -r \$script ]; then
+        . \$script
+    fi
+done
+
+exec "\$@"
+EOF
+RUN chmod +x /opt/entrypoint.sh
+ENTRYPOINT ["/opt/entrypoint.sh"]
