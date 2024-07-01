@@ -1,0 +1,54 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/ubuntu
+{
+	"name": "Ubuntu",
+	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+	"image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+	// Features to add to the dev container. More info: https://containers.dev/features.
+	"features": {
+		"ghcr.io/ar90n/devcontainer-features/pico-sdk:1": {
+			"installExamples": true,
+			"installExtras": true,
+			"installPlayground": true,
+			"installPicoprobe": true,
+			"installPicotool": true,
+			"installOpenOCD": true
+		},
+		"ghcr.io/ar90n/devcontainer-features/ros2:latest": {
+			"package": "ros-base"
+		}
+	},
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	// "forwardPorts": [],
+	// Use 'postCreateCommand' to run commands after the container is created.
+	// "postCreateCommand": "",
+	// Configure tool-specific properties.
+	//"customizations": {},
+	"extensions": [
+		"github.copilot",
+		"github.copilot-chat",
+		"marus25.cortex-debug",
+		"mcu-debug.debug-tracker-vscode",
+		"mcu-debug.memory-view",
+		"mcu-debug.peripheral-viewer",
+		"mcu-debug.rtos-views",
+		"ms-vscode.cmake-tools",
+		"ms-vscode.cpptools",
+		"ms-vscode.cpptools-extension-pack",
+		"ms-vscode.cpptools-themes",
+		"twxs.cmake"
+	],
+	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+	"runArgs": [
+		"--mount",
+		"type=bind,source=/dev,target=/dev",
+		"--volumes-from",
+		"xpra",
+		"--privileged"
+	],
+	"containerEnv": {
+		"DISPLAY": ":20000",
+		"MICRO_ROS_PATH": "/workspaces/rover0/libs/micro_ros_raspberrypi_pico_sdk/libmicroros"
+	},
+	"remoteUser": "root"
+}
