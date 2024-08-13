@@ -25,12 +25,3 @@ services:
     environment:
       <<: *environment
     command: serial -D $LIDAR_SERIAL_PORT serial -b 115200
-  uros-agent-motor:
-    <<: *base
-    image: microros/micro-ros-agent:humble
-    container_name: uros-agent-motor
-    devices:
-      - ${MOTOR_SERIAL_PORT:?err}
-    environment:
-      <<: *environment
-    command: serial -D $MOTOR_SERIAL_PORT serial -b 115200
