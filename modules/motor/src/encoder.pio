@@ -1,0 +1,44 @@
+.program encoder
+
+.origin 0
+    jmp  doit  
+    jmp  x-- doit 
+    jmp  x-- doit 
+    jmp  doit 
+
+.wrap_target
+    mov osr !null
+    in pins 1
+    out y 8
+    mov x y
+read:
+    mov OSR ISR 
+    out ISR 1 
+    in pins 1 
+    mov exec ISR 
+
+doit:
+    jmp y-- read
+    mov isr x 
+    push
+.wrap
+
+% c-sdk {
+#include "hardware/clocks.h"
+
+static inline void encoder_program_init(PIO pio, uint sm, uint offset, uint pin) {
+    pio_sm_config c = encoder_program_get_default_config(0);
+
+    sm_config_set_in_pins(&c, pin);
+    pio_gpio_init(pio, pin);
+    pio_sm_set_consecutive_pindirs(pio, sm, pin, 1, false);
+    sm_config_set_in_shift(&c, false, false, 0);
+
+    constexpr float pio_clock{10000.0f}; // 10[kHz]
+    float const div{clock_get_hz(clk_sys) / pio_clock};
+    sm_config_set_clkdiv(&c, div);
+
+    pio_sm_init(pio, sm, offset, &c);
+    pio_sm_set_enabled(pio, sm, true);
+}
+%}
