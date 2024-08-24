@@ -1,0 +1,98 @@
+[tool.poetry]
+name = "motorctl"
+version = "0.1.0"
+description = ""
+authors = ["Masahiro Wada <argon.argon.argon@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pyserial = "^3.5"
+textual = "^0.76.0"
+typer = "^0.12.3"
+
+
+[tool.poetry.group.dev.dependencies]
+textual-dev = "^1.5.1"
+pyright = "^1.1.376"
+ruff = "^0.5.7"
+poethepoet = "^0.27.0"
+ipykernel = "^6.29.5"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poe.tasks]
+lint = "ruff check ."
+lint-fix = "ruff check --fix ."
+format = "ruff format ."
+
+[tool.ruff]
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".ipynb_checkpoints",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pyenv",
+    ".pytest_cache",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    ".vscode",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "site-packages",
+    "venv",
+]
+
+line-length = 120
+indent-width = 4
+target-version = "py38"
+
+[tool.ruff.lint]
+select = [
+  "C9",
+  "E",
+  "F",
+  "W",
+  "I",
+]
+ignore = []
+fixable = ["ALL"]
+unfixable = []
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+known-first-party = ["musubi_restapi"]
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
+split-on-trailing-comma = true
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+docstring-code-format = false
+docstring-code-line-length = "dynamic"
+
+[tool.pyright]
+include = ["ros_graph_dump", "tests"]
+defineConstant = { DEBUG = true }
+reportUnknownParameterType = false
+reportUnknownArgumentType = false
+reportUnknownLambdaType = false
+reportMissingTypeStubs = false

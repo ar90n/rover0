@@ -1,0 +1,84 @@
+Screen {
+    align: center middle;
+}
+
+Sensors {
+    max-width: 90;
+    height: 9;
+}
+
+MotorControlValueDisplay {
+    align: center middle;
+    text-opacity: 60%;
+    width: 1fr;
+    height: 3;
+    text-align: center;
+    border: solid green;
+}
+
+MotorControl {
+    layout: vertical;
+    background: $boost;
+    height: 9;
+    max-width: 90;
+    padding: 1;
+    border: heavy green;
+}
+
+
+SensorOutputDisplay {
+    height: 1;
+}
+
+Button {
+    max-width: 6;
+}
+
+AccelerometerOutput {
+    layout: vertical;
+    background: $boost;
+    height: 9;
+    padding: 1;
+    padding-left: 3;
+    padding-right: 3;
+    width: 45;
+    border: heavy green;
+}
+
+GyroscopeOutput {
+    layout: vertical;
+    background: $boost;
+    height: 9;
+    padding: 1;
+    padding-left: 3;
+    padding-right: 3;
+    width: 45;
+    border: heavy green;
+}
+
+Title {
+    text-align: center;
+    margin-bottom: 1;
+}
+
+.move-forward {
+    background: $success;
+}
+
+.move-backward {
+    background: $success;
+}
+
+.sensor-value {
+    text-align: right;
+    margin-right: 1;
+    margin-left: 1;
+    width: 1fr;
+}
+
+.control-value {
+    text-align: right;
+    margin-right: 1;
+    margin-left: 1;
+    width: 1fr;
+}
