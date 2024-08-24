@@ -21,7 +21,6 @@ add_executable(rover0-motor
     ${SRC_DIR}/main_proc.cpp
     ${SRC_DIR}/message.cpp
     ${SRC_DIR}/endian_utils.cpp
-    ${SRC_DIR}/calibrate.cpp
 )
 
 # Link the target with the Pico standard library and micro-ROS

@@ -3,7 +3,6 @@
 #include "pico/multicore.h"
 #include "pico/stdlib.h"
 
-#include "calibrate.hpp"
 #include "comm_proc.hpp"
 #include "logger.hpp"
 #include "main_proc.hpp"
@@ -19,12 +18,6 @@ int main()
 #ifndef NDEBUG
   logger::init(printf_write);
 #endif
-
-  if (calibrate::should_calibrate()) {
-    logger::init(printf_write);
-    calibrate::calibrate();
-    return 0;
-  }
 
   // There isn't a strict rule that you must always call sleep_ms() before calling multicore_launch_core1
   sleep_ms(1000);

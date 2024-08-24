@@ -52,7 +52,7 @@ public:
     return instance;
   }
 
-  void init(uint baudrate, Offsets const& offsets)
+  void init(uint baudrate)
   {
     i2c_init(inst(), baudrate);
     gpio_set_function(SDA_PIN, GPIO_FUNC_I2C);
@@ -60,21 +60,7 @@ public:
     gpio_pull_up(SDA_PIN);
     gpio_pull_up(SCL_PIN);
 
-    uint8_t const buf[]{
-      0x6B, 0x00,
-      //0x06, static_cast<uint8_t>(offsets.acc_x >> 8),
-      //0x07, static_cast<uint8_t>(offsets.acc_x & 0xff),
-      //0x08, 0x00,//static_cast<uint8_t>(offsets.acc_y >> 8),
-      //0x09, 0x00,//static_cast<uint8_t>(offsets.acc_y & 0xff),
-      //0x0a, 0x00,//static_cast<uint8_t>(offsets.acc_z >> 8),
-      //0x0b, 0x00,//static_cast<uint8_t>(offsets.acc_z & 0xff),
-      //0x13, static_cast<uint8_t>(offsets.gyro_x >> 8),
-      //0x14, static_cast<uint8_t>(offsets.gyro_x & 0xff),
-      //0x15, static_cast<uint8_t>(offsets.gyro_y >> 8),
-      //0x16, static_cast<uint8_t>(offsets.gyro_y & 0xff),
-      //0x17, static_cast<uint8_t>(offsets.gyro_z >> 8),
-      //0x18, static_cast<uint8_t>(offsets.gyro_z & 0xff),
-    };
+    uint8_t const buf[]{ 0x6B, 0x00 };
     i2c_write_blocking(inst(), I2C_ADDR, buf, sizeof buf, false);
   }
 

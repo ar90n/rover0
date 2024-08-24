@@ -6,7 +6,6 @@
 #include "pico/multicore.h"
 #include "pico/stdlib.h"
 
-#include "calibrate.hpp"
 #include "config.hpp"
 #include "device.hpp"
 #include "logger.hpp"
@@ -170,8 +169,7 @@ void dispathc_msg()
 namespace main_proc {
 int run()
 {
-  auto const offsets{ calibrate::load_offsets() };
-  ::imu_.init(Config::I2C_IMU_BAUDRATE, offsets);
+  ::imu_.init(Config::I2C_IMU_BAUDRATE);
 
   async_context_poll_t context;
   async_context_poll_init_with_defaults(&context);
