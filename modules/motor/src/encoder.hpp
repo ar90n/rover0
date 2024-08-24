@@ -35,7 +35,7 @@ public:
     std::optional<uint16_t> ret{ std::nullopt };
     auto                    pio = reinterpret_cast<PIO>(PIO_BASE);
     while (0 < pio_sm_get_rx_fifo_level(pio, SM)) {
-      ret = static_cast<uint16_t>(pio_sm_get(pio, SM));
+      ret = 255 - static_cast<uint16_t>(pio_sm_get(pio, SM));
     }
 
     return ret;

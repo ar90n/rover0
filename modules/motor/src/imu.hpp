@@ -2,8 +2,19 @@
 
 #include "hardware/i2c.h"
 
-#include "gpio.hpp"
 #include "endian_utils.hpp"
+#include "gpio.hpp"
+
+namespace imu {
+struct Offsets
+{
+  int16_t acc_x;
+  int16_t acc_y;
+  int16_t acc_z;
+  int16_t gyro_x;
+  int16_t gyro_y;
+  int16_t gyro_z;
+};
 
 template<unsigned M, unsigned SDA_PIN, unsigned SCL_PIN>
 class IMU_6050
@@ -41,7 +52,7 @@ public:
     return instance;
   }
 
-  void init(uint baudrate)
+  void init(uint baudrate, Offsets const& offsets)
   {
     i2c_init(inst(), baudrate);
     gpio_set_function(SDA_PIN, GPIO_FUNC_I2C);
@@ -49,8 +60,22 @@ public:
     gpio_pull_up(SDA_PIN);
     gpio_pull_up(SCL_PIN);
 
-    uint8_t const buf[] = { 0x6B, 0x00 };
-    i2c_write_blocking(inst(), I2C_ADDR, buf, 2, false);
+    uint8_t const buf[]{
+      0x6B, 0x00,
+      //0x06, static_cast<uint8_t>(offsets.acc_x >> 8),
+      //0x07, static_cast<uint8_t>(offsets.acc_x & 0xff),
+      //0x08, 0x00,//static_cast<uint8_t>(offsets.acc_y >> 8),
+      //0x09, 0x00,//static_cast<uint8_t>(offsets.acc_y & 0xff),
+      //0x0a, 0x00,//static_cast<uint8_t>(offsets.acc_z >> 8),
+      //0x0b, 0x00,//static_cast<uint8_t>(offsets.acc_z & 0xff),
+      //0x13, static_cast<uint8_t>(offsets.gyro_x >> 8),
+      //0x14, static_cast<uint8_t>(offsets.gyro_x & 0xff),
+      //0x15, static_cast<uint8_t>(offsets.gyro_y >> 8),
+      //0x16, static_cast<uint8_t>(offsets.gyro_y & 0xff),
+      //0x17, static_cast<uint8_t>(offsets.gyro_z >> 8),
+      //0x18, static_cast<uint8_t>(offsets.gyro_z & 0xff),
+    };
+    i2c_write_blocking(inst(), I2C_ADDR, buf, sizeof buf, false);
   }
 
   void write(uint8_t address, uint8_t value) { i2c_write_blocking(inst(), address, &value, 1, false); }
@@ -111,3 +136,5 @@ private:
 
   IMU_6050() {}
 };
+
+} // namespace imu

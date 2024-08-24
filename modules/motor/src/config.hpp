@@ -26,5 +26,5 @@ struct Config
   static constexpr uint I2C_IMU_SDA              = 20;
   static constexpr uint I2C_IMU_SCL              = 21;
   static constexpr uint I2C_IMU_BAUDRATE         = 400 * 1000;
-  static constexpr uint QUEUE_SIZE               = 32;
+  static constexpr uint QUEUE_SIZE               = 128;
 };

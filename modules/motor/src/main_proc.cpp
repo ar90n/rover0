@@ -6,46 +6,31 @@
 #include "pico/multicore.h"
 #include "pico/stdlib.h"
 
+#include "calibrate.hpp"
 #include "config.hpp"
-#include "encoder.hpp"
-#include "gpio.hpp"
-#include "imu.hpp"
+#include "device.hpp"
 #include "logger.hpp"
 #include "message.hpp"
-#include "motor.hpp"
 #include "queue.hpp"
 #include "task.hpp"
 
 namespace {
 
-using GpioLED                 = Gpio<Config::LED_PIN>;
-using GpioESW                 = Gpio<Config::ESW_PIN, GPIO_FUNC_SIO, GPIO_IN>;
-using RearLeftRotaryEncoder   = RotaryEncoder<Config::REAR_LEFT_ENCODER_PIN, PIO0_BASE, 0>;
-using RearRightRotaryEncoder  = RotaryEncoder<Config::REAR_RIGHT_ENCODER_PIN, PIO0_BASE, 1>;
-using FrontLeftRotaryEncoder  = RotaryEncoder<Config::FRONT_LEFT_ENCODER_PIN, PIO0_BASE, 2>;
-using FrontRightRotaryEncoder = RotaryEncoder<Config::FRONT_RIGHT_ENCODER_PIN, PIO0_BASE, 3>;
-using RearLeftMotor =
-  Motor<Config::REAR_LEFT_FORWARD_PIN, Config::REAR_LEFT_BACKWARD_PIN, RearLeftRotaryEncoder>;
-using RearRightMotor =
-  Motor<Config::REAR_RIGHT_FORWARD_PIN, Config::REAR_RIGHT_BACKWARD_PIN, RearRightRotaryEncoder>;
-using FrontLeftMotor =
-  Motor<Config::FRONT_LEFT_FORWARD_PIN, Config::FRONT_LEFT_BACKWARD_PIN, FrontLeftRotaryEncoder>;
-using FrontRightMotor =
-  Motor<Config::FRONT_RIGHT_FORWARD_PIN, Config::FRONT_RIGHT_BACKWARD_PIN, FrontRightRotaryEncoder>;
-using IMU = IMU_6050<Config::I2C_IMU, Config::I2C_IMU_SDA, Config::I2C_IMU_SCL>;
-
-auto gpio_led          = GpioLED::instance();
-auto gpio_esw          = GpioESW::instance();
-auto motor_rear_left   = RearLeftMotor::instance();
-auto motor_rear_right  = RearRightMotor::instance();
-auto motor_front_left  = FrontLeftMotor::instance();
-auto motor_front_right = FrontRightMotor::instance();
-auto imu               = IMU::instance();
+auto gpio_led          = device::GpioLED::instance();
+auto gpio_esw          = device::GpioESW::instance();
+auto motor_rear_left   = device::RearLeftMotor::instance();
+auto motor_rear_right  = device::RearRightMotor::instance();
+auto motor_front_left  = device::FrontLeftMotor::instance();
+auto motor_front_right = device::FrontRightMotor::instance();
+auto imu_              = device::IMU::instance();
 
 template<typename T>
 void push_msg(T const& msg)
 {
-  bool const ret = multicore_fifo_push_timeout_us(serialize(msg), 100);
+  if (!multicore_fifo_wready()) {
+    return;
+  }
+  multicore_fifo_push_blocking(serialize(msg));
 }
 
 std::optional<message::RxMsg> pop_rx_msg()
@@ -54,12 +39,7 @@ std::optional<message::RxMsg> pop_rx_msg()
     return std::nullopt;
   }
 
-  uint32_t   bytes;
-  bool const ret = multicore_fifo_pop_timeout_us(100, &bytes);
-  if (!ret) {
-    return std::nullopt;
-  }
-
+  uint32_t const bytes{ multicore_fifo_pop_blocking() };
   return message::parse_rx_msg(bytes);
 }
 
@@ -68,19 +48,19 @@ async_at_time_worker_t create_motor_encoder_worker()
 {
   return task::create_scheduled_worker_in_ms<Interval>(
     [](async_context_t* context, async_at_time_worker_t* worker) {
-      if (auto const& cnt = motor_rear_left.get_encoder_value()) {
+      if (auto const cnt = motor_rear_left.get_encoder_value(); cnt.has_value()) {
         auto const r = cnt.value();
         push_msg(message::EncoderMsg{ message::MotorDevice::REAR_LEFT, r });
       }
-      if (auto const& cnt = motor_front_left.get_encoder_value()) {
+      if (auto const cnt = motor_front_left.get_encoder_value(); cnt.has_value()) {
         auto const r = cnt.value();
         push_msg(message::EncoderMsg{ message::MotorDevice::FRONT_LEFT, r });
       }
-      if (auto const& cnt = motor_rear_right.get_encoder_value()) {
+      if (auto const cnt = motor_rear_right.get_encoder_value(); cnt.has_value()) {
         auto const r = cnt.value();
         push_msg(message::EncoderMsg{ message::MotorDevice::REAR_RIGHT, r });
       }
-      if (auto const& cnt = motor_front_right.get_encoder_value()) {
+      if (auto const cnt = motor_front_right.get_encoder_value(); cnt.has_value()) {
         auto const r = cnt.value();
         push_msg(message::EncoderMsg{ message::MotorDevice::FRONT_RIGHT, r });
       }
@@ -125,7 +105,7 @@ async_at_time_worker_t create_imu_worker()
 {
   return task::create_scheduled_worker_in_ms<Interval>(
     [](async_context_t* context, async_at_time_worker_t* worker) {
-      auto const ret = imu.read();
+      auto const ret = imu_.read();
       push_msg(message::ImuMsg{ message::ImuData::ACCEL_X, ret.accel.x });
       push_msg(message::ImuMsg{ message::ImuData::ACCEL_Y, ret.accel.y });
       push_msg(message::ImuMsg{ message::ImuData::ACCEL_Z, ret.accel.z });
@@ -190,12 +170,13 @@ void dispathc_msg()
 namespace main_proc {
 int run()
 {
-  imu.init(Config::I2C_IMU_BAUDRATE);
+  auto const offsets{ calibrate::load_offsets() };
+  ::imu_.init(Config::I2C_IMU_BAUDRATE, offsets);
 
   async_context_poll_t context;
   async_context_poll_init_with_defaults(&context);
 
-  async_at_time_worker_t emergency_worker = create_emergency_worker<1>();
+  async_at_time_worker_t emergency_worker = create_emergency_worker<10>();
   async_context_add_at_time_worker_in_ms(&context.core, &emergency_worker, 0);
 
   async_at_time_worker_t led_heartbeat_worker = create_led_heartbeat_worker<500>();

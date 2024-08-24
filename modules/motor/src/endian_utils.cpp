@@ -20,8 +20,8 @@ std::array<uint8_t, 2> unpack_int16_be(int16_t value)
 
 std::array<uint8_t, 4> unpack_uint32_be(uint32_t value)
 {
-  return { static_cast<uint8_t>(value >> 24),
-           static_cast<uint8_t>(value >> 16),
-           static_cast<uint8_t>(value >> 8),
-           static_cast<uint8_t>(value) };
+  return { static_cast<uint8_t>((value >> 24) & 0xff),
+           static_cast<uint8_t>((value >> 16) & 0xff),
+           static_cast<uint8_t>((value >>  8) & 0xff),
+           static_cast<uint8_t>((value >>  0) & 0xff) };
 }

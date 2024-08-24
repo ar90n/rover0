@@ -50,12 +50,12 @@ void run()
       transport::send(bytes);
     }
 
-    //while (UartControl::instance().has_data()) {
-    //  auto const byte{ UartControl::instance().read() };
-    //  if (auto const recv{ transport::consume(byte) }; recv.has_value()) {
-    //    multicore_fifo_push_blocking(recv.value());
-    //  }
-    //}
+    while (UartControl::instance().has_data()) {
+      auto const byte{ UartControl::instance().read() };
+      if (auto const recv{ transport::consume(byte) }; recv.has_value()) {
+        multicore_fifo_push_blocking(recv.value());
+      }
+    }
   }
 }
 }
