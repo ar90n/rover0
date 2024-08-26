@@ -1,5 +1,4 @@
-#ifndef UART_HPP_
-#define UART_HPP_
+#pragma once
 
 #include <array>
 #include <optional>
@@ -129,5 +128,3 @@ private:
 
 template <int M, int TX, int RX, int N>
 Queue<uint8_t, N> Uart<M, TX, RX, N>::queue{};
-
-#endif // UART_HPP_

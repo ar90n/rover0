@@ -1,5 +1,4 @@
-#ifndef TRANSPORT_HPP_
-#define TRANSPORT_HPP_
+#pragma
 
 #include <stdint.h>
 
@@ -59,5 +58,3 @@ private:
   T &uart;
   uint baurate;
 };
-
-#endif // TRANSPORT_HPP_

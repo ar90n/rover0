@@ -126,6 +126,18 @@ void fetch_timer_callback(rcl_timer_t *timer, int64_t last_call_time) {
   }
 }
 
+void heartbeat_timer_callback(rcl_timer_t *timer, int64_t last_call_time) {
+  RCLC_UNUSED(last_call_time);
+  if (timer == NULL) {
+    return;
+  }
+
+  static bool led_state = false;
+  gpio_led.write(led_state);
+  led_state = !led_state;
+}
+
+
 rcl_publisher_t publisher;
 sensor_msgs__msg__LaserScan msg;
 void publish_timer_callback(rcl_timer_t *timer, int64_t last_call_time) {
@@ -210,11 +222,20 @@ int main() {
                                   RCL_MS_TO_NS(fetch_timer_timeout),
                                   fetch_timer_callback));
 
+  // create heartbeat_timer,
+  rcl_timer_t heartbeat_timer;
+  const unsigned int heartbeat_timeout = 500;
+  RCCHECK(rclc_timer_init_default(&heartbeat_timer, &support,
+                                  RCL_MS_TO_NS(heartbeat_timeout),
+                                  heartbeat_timer_callback));
+
+
   // create executor
   rclc_executor_t executor;
-  RCCHECK(rclc_executor_init(&executor, &support.context, 2, &allocator));
+  RCCHECK(rclc_executor_init(&executor, &support.context, 3, &allocator));
   RCCHECK(rclc_executor_add_timer(&executor, &publish_timer));
   RCCHECK(rclc_executor_add_timer(&executor, &fetch_timer));
+  RCCHECK(rclc_executor_add_timer(&executor, &heartbeat_timer));
 
   gpio_pwm.write(1.0f);
   while (true) {

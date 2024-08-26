@@ -1,5 +1,4 @@
-#ifndef MP_HPP_
-#define MP_HPP_
+#pragma once
 
 #include <concepts>
 #include <tuple>
@@ -95,5 +94,3 @@ constexpr auto append = [] { return State; };
 
 } // namespace assoc_list
 } // namespace mp
-
-#endif // MP_HPP_

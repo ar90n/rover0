@@ -1,9 +1,10 @@
-#ifndef GPIO_HPP_
-#define GPIO_HPP_
+#pragma once
 
-#include "hardware/gpio.h"
 #include <algorithm>
 #include <cmath>
+
+#include "hardware/gpio.h"
+#include "hardware/pwm.h"
 
 #include "mp.hpp"
 
@@ -42,5 +43,3 @@ private:
     }
   }
 };
-
-#endif // GPIO_HPP_
