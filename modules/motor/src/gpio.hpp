@@ -1,9 +1,10 @@
 #pragma once
 
-#include "hardware/gpio.h"
-#include "hardware/pwm.h"
 #include <algorithm>
 #include <cmath>
+
+#include "hardware/gpio.h"
+#include "hardware/pwm.h"
 
 #include "mp.hpp"
 

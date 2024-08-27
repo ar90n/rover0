@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.28)
 
+set(MODULE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/.. CACHE PATH "Path to module directory")
+
 # Include the Pico SDK
 include($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
 
@@ -8,16 +10,19 @@ pico_sdk_init()
 
 project(rover0-lidar)
 
-
 # Set the micro-ROS path
 set(MICRO_ROS_PATH $ENV{MICRO_ROS_PATH})
 
 # Set the source directory
 set(SRC_DIR ${CMAKE_SOURCE_DIR}/src)
 
-
 # Add micro-ROS include directory
 include_directories(${MICRO_ROS_PATH}/include)
+
+# Add common library
+set(COMMON_DIR ${MODULE_DIR}/common CACHE PATH "Path to common library")
+add_subdirectory(${COMMON_DIR} ${CMAKE_BINARY_DIR}/common)
+
 
 # Define the executable target, including C, C++, and ASM files from the source directory
 add_executable(rover0-lidar
@@ -26,7 +31,7 @@ add_executable(rover0-lidar
 )
 
 # Link the target with the Pico standard library and micro-ROS
-target_link_libraries(rover0-lidar pico_stdlib hardware_pwm hardware_uart ${MICRO_ROS_PATH}/libmicroros.a)
+target_link_libraries(rover0-lidar common::common pico_stdlib hardware_pwm hardware_uart ${MICRO_ROS_PATH}/libmicroros.a)
 
 # Set target properties for the rover0-lidar executable
 set_target_properties(rover0-lidar PROPERTIES
