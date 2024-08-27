@@ -21,7 +21,7 @@ void _log_impl(std::string_view msg)
   }
 
   auto const abs_time = get_absolute_time();
-  auto const time_ms = to_ms_since_boot(abs_time);
+  auto const time_ms  = to_ms_since_boot(abs_time);
 
   writer(std::format("[{:08}] ", time_ms));
   writer(msg);

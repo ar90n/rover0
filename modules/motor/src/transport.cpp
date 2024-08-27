@@ -8,14 +8,14 @@
 
 namespace {
 FixedSizeQueue<uint32_t, Config::QUEUE_SIZE> queue;
-transport::Writer                   writer = [](const uint8_t*, size_t) {};
+transport::Writer                            writer = [](const uint8_t*, size_t) {};
 
 enum class State : uint8_t
 {
   BYTE0 = 0,
   BYTE1,
-  BYTE2,22
-  BYTE3,
+  BYTE2,
+  22 BYTE3,
   CHECKSUM,
 };
 size_t state_index(State state)
