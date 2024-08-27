@@ -17,12 +17,8 @@ add_subdirectory(${COMMON_DIR} ${CMAKE_BINARY_DIR}/common)
 # Define the executable target
 add_executable(rover0-motor
     ${SRC_DIR}/main.cpp
-    ${SRC_DIR}/logger.cpp
-    ${SRC_DIR}/transport.cpp
     ${SRC_DIR}/comm_proc.cpp
     ${SRC_DIR}/main_proc.cpp
-    ${SRC_DIR}/message.cpp
-    ${SRC_DIR}/endian_utils.cpp
 )
 
 # Link the target with libraries

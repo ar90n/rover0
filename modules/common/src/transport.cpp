@@ -1,20 +1,21 @@
 #include <functional>
+#include <cstdint>
 
-#include "config.hpp"
 #include "endian_utils.hpp"
-#include "logger.hpp"
 #include "queue.hpp"
 #include "transport.hpp"
 
 namespace {
-FixedSizeQueue<uint32_t, Config::QUEUE_SIZE> queue;
+static constexpr uint32_t QUEUE_SIZE               = 128;
+
+FixedSizeQueue<uint32_t, QUEUE_SIZE> queue;
 transport::Writer                   writer = [](const uint8_t*, size_t) {};
 
 enum class State : uint8_t
 {
   BYTE0 = 0,
   BYTE1,
-  BYTE2,22
+  BYTE2,
   BYTE3,
   CHECKSUM,
 };
