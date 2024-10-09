@@ -1,0 +1,24 @@
+version: "3.9"
+
+services:
+  motorctl_init:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: rover0/motorctl
+    container_name: motorctl_init
+    command: poetry install 
+    volumes:
+      - .:/workspace
+    working_dir: /workspace
+  motorctl:
+    image: rover0/motorctl
+    container_name: motorctl
+    command: poetry run textual run motorctl/app.py ${MOTOR_SERIAL_PORT:?err}
+    devices:
+      - ${MOTOR_SERIAL_PORT:?err}
+    volumes:
+      - .:/workspace
+    working_dir: /workspace
+    tty: true
+    stdin_open: true
