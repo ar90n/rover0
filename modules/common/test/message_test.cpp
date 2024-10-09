@@ -71,7 +71,7 @@ UTEST(message, check_parse_rx_msg)
 
 UTEST(message, check_parse_rx_msg_fail)
 {
-  std::optional<RxMsg> rx_msg = parse_rx_msg(0x12ff0301);
+  std::optional<RxMsg> rx_msg = parse_rx_msg(0x12ff0303);
   ASSERT_FALSE(rx_msg.has_value());
 }
 

@@ -1,20 +1,25 @@
 cmake_minimum_required(VERSION 3.12)
 project(common VERSION 1.0.0 LANGUAGES CXX)
 
+# Set the source directory
+set(SRC_DIR ${CMAKE_SOURCE_DIR}/src)
+set(INCLUDE_DIR ${CMAKE_SOURCE_DIR}/include)
+set(TEST_DIR ${CMAKE_SOURCE_DIR}/test)
+
 # Create a static library
 add_library(${PROJECT_NAME} STATIC
-    src/endian_utils.cpp
-    src/message.cpp
-    src/transport.cpp
+    ${SRC_DIR}/endian_utils.cpp
+    ${SRC_DIR}/message.cpp
+    ${SRC_DIR}/transport.cpp
 )
 
 # Specify include directories for this library and its users
 target_include_directories(${PROJECT_NAME} 
     PUBLIC 
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${INCLUDE_DIR}>
         $<INSTALL_INTERFACE:include>
     PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${SRC_DIR}
 )
 
 # Set C++ standard
@@ -41,4 +46,9 @@ install(EXPORT ${PROJECT_NAME}Targets
     FILE ${PROJECT_NAME}Targets.cmake
     NAMESPACE ${PROJECT_NAME}::
     DESTINATION lib/cmake/${PROJECT_NAME}
+)
+
+add_custom_target(test
+    COMMAND g++ -std=c++20 ${SRC_DIR}/endian_utils.cpp ${SRC_DIR}/message.cpp ${TEST_DIR}/main.cpp ${TEST_DIR}/endian_utils_test.cpp ${TEST_DIR}/message_test.cpp -o common-test -I ${SRC_DIR} -I ${INCLUDE_DIR}
+    COMMENT "Run test"
 )

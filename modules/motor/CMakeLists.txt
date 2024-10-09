@@ -62,7 +62,7 @@ add_custom_target(flash
 )
 
 add_custom_target(test
-    COMMAND g++ -std=c++20 ${SRC_DIR}/message.cpp ${SRC_DIR}/endian_utils.cpp ${TEST_DIR}/main.cpp ${TEST_DIR}/message_test.cpp ${TEST_DIR}/queue_test.cpp ${TEST_DIR}/endian_utils_test.cpp -o rover0-motor-test -I ${SRC_DIR} -I ${COMMON_DIR}/include
+    COMMAND g++ -std=c++20 ${TEST_DIR}/main.cpp ${TEST_DIR}/queue_test.cpp -o rover0-motor-test -I ${SRC_DIR} -I ${COMMON_DIR}/include
     COMMENT "Run test"
 )
 
