@@ -17,6 +17,12 @@ std::optional<RxMsg> parse_rx_msg(uint32_t raw) {
   case MsgType::MOTOR: {
     return deserialize<MotorMsg>(raw);
   } break;
+  case MsgType::ENCODER: {
+    return deserialize<EncoderMsg>(raw);
+  } break;
+  case MsgType::IMU: {
+    return deserialize<ImuMsg>(raw);
+  } break;
   default:
     return std::nullopt;
   }

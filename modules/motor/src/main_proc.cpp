@@ -1,3 +1,4 @@
+#include <atomic>
 #include <format>
 #include <variant>
 
@@ -22,6 +23,18 @@ auto motor_rear_right  = device::RearRightMotor::instance();
 auto motor_front_left  = device::FrontLeftMotor::instance();
 auto motor_front_right = device::FrontRightMotor::instance();
 auto imu_              = device::IMU::instance();
+
+std::atomic<uint16_t> motor_rear_left_encoder_value   = 0;
+std::atomic<uint16_t> motor_rear_right_encoder_value  = 0;
+std::atomic<uint16_t> motor_front_left_encoder_value  = 0;
+std::atomic<uint16_t> motor_front_right_encoder_value = 0;
+std::atomic<int16_t>  imu_accel_x                     = 0;
+std::atomic<int16_t>  imu_accel_y                     = 0;
+std::atomic<int16_t>  imu_accel_z                     = 0;
+std::atomic<int16_t>  imu_gyro_x                      = 0;
+std::atomic<int16_t>  imu_gyro_y                      = 0;
+std::atomic<int16_t>  imu_gyro_z                      = 0;
+std::atomic<int16_t>  imu_temp                        = 0;
 
 template<typename T>
 void push_msg(T const& msg)
@@ -48,52 +61,16 @@ async_at_time_worker_t create_motor_encoder_worker()
   return task::create_scheduled_worker_in_ms<Interval>(
     [](async_context_t* context, async_at_time_worker_t* worker) {
       if (auto const cnt = motor_rear_left.get_encoder_value(); cnt.has_value()) {
-        auto const r = cnt.value();
-        push_msg(message::EncoderMsg{ message::MotorDevice::REAR_LEFT, r });
+        ::motor_rear_left_encoder_value.store(cnt.value());
       }
       if (auto const cnt = motor_front_left.get_encoder_value(); cnt.has_value()) {
-        auto const r = cnt.value();
-        push_msg(message::EncoderMsg{ message::MotorDevice::FRONT_LEFT, r });
+        ::motor_front_left_encoder_value.store(cnt.value());
       }
       if (auto const cnt = motor_rear_right.get_encoder_value(); cnt.has_value()) {
-        auto const r = cnt.value();
-        push_msg(message::EncoderMsg{ message::MotorDevice::REAR_RIGHT, r });
+        ::motor_rear_right_encoder_value.store(cnt.value());
       }
       if (auto const cnt = motor_front_right.get_encoder_value(); cnt.has_value()) {
-        auto const r = cnt.value();
-        push_msg(message::EncoderMsg{ message::MotorDevice::FRONT_RIGHT, r });
-      }
-    }
-  );
-}
-
-FixedSizeQueue<message::MotorMsg, Config::QUEUE_SIZE> motor_msg_queue;
-template<unsigned Interval>
-async_at_time_worker_t create_motor_drive_worker()
-{
-  return task::create_scheduled_worker_in_ms<Interval>(
-    [](async_context_t* context, async_at_time_worker_t* worker) {
-      while (!motor_msg_queue.empty()) {
-        auto const msg = motor_msg_queue.pop();
-        if (!msg.has_value()) {
-          continue;
-        }
-
-        auto const drive_power = msg.value().value / 32768.0;
-        switch (msg.value().param) {
-          case message::MotorDevice::REAR_LEFT:
-            motor_rear_left.drive(drive_power);
-            break;
-          case message::MotorDevice::REAR_RIGHT:
-            motor_rear_right.drive(drive_power);
-            break;
-          case message::MotorDevice::FRONT_LEFT:
-            motor_front_left.drive(drive_power);
-            break;
-          case message::MotorDevice::FRONT_RIGHT:
-            motor_front_right.drive(drive_power);
-            break;
-        }
+        ::motor_front_right_encoder_value.store(cnt.value());
       }
     }
   );
@@ -105,13 +82,13 @@ async_at_time_worker_t create_imu_worker()
   return task::create_scheduled_worker_in_ms<Interval>(
     [](async_context_t* context, async_at_time_worker_t* worker) {
       auto const ret = imu_.read();
-      push_msg(message::ImuMsg{ message::ImuData::ACCEL_X, ret.accel.x });
-      push_msg(message::ImuMsg{ message::ImuData::ACCEL_Y, ret.accel.y });
-      push_msg(message::ImuMsg{ message::ImuData::ACCEL_Z, ret.accel.z });
-      push_msg(message::ImuMsg{ message::ImuData::GYRO_X, ret.gyro.x });
-      push_msg(message::ImuMsg{ message::ImuData::GYRO_Y, ret.gyro.y });
-      push_msg(message::ImuMsg{ message::ImuData::GYRO_Z, ret.gyro.z });
-      push_msg(message::ImuMsg{ message::ImuData::TEMP, ret.temp });
+      ::imu_accel_x.store(ret.accel.x);
+      ::imu_accel_y.store(ret.accel.y);
+      ::imu_accel_z.store(ret.accel.z);
+      ::imu_gyro_x.store(ret.gyro.x);
+      ::imu_gyro_y.store(ret.gyro.y);
+      ::imu_gyro_z.store(ret.gyro.z);
+      ::imu_temp.store(ret.temp);
     }
   );
 }
@@ -151,10 +128,74 @@ async_at_time_worker_t create_emergency_worker()
 
 struct MsgVisitor
 {
-  void operator()(message::MotorMsg const& msg) const { motor_msg_queue.push(msg); }
+  void operator()(message::MotorMsg const& msg) const
+  {
+    auto const drive_power = msg.value / 32768.0;
+    switch (msg.param) {
+      case message::MotorDevice::REAR_LEFT:
+        motor_rear_left.drive(drive_power);
+        break;
+      case message::MotorDevice::REAR_RIGHT:
+        motor_rear_right.drive(drive_power);
+        break;
+      case message::MotorDevice::FRONT_LEFT:
+        motor_front_left.drive(drive_power);
+        break;
+      case message::MotorDevice::FRONT_RIGHT:
+        motor_front_right.drive(drive_power);
+        break;
+    }
+  }
+  void operator()(message::EncoderMsg const& msg) const
+  {
+    switch (msg.param) {
+      case message::MotorDevice::REAR_LEFT:
+        push_msg(message::EncoderMsg{ message::MotorDevice::REAR_LEFT,
+                                      ::motor_rear_left_encoder_value.load() });
+        break;
+      case message::MotorDevice::REAR_RIGHT:
+        push_msg(message::EncoderMsg{ message::MotorDevice::REAR_RIGHT,
+                                      ::motor_rear_right_encoder_value.load() });
+        break;
+      case message::MotorDevice::FRONT_LEFT:
+        push_msg(message::EncoderMsg{ message::MotorDevice::FRONT_LEFT,
+                                      ::motor_front_left_encoder_value.load() });
+        break;
+      case message::MotorDevice::FRONT_RIGHT:
+        push_msg(message::EncoderMsg{ message::MotorDevice::FRONT_RIGHT,
+                                      ::motor_front_right_encoder_value.load() });
+        break;
+    }
+  }
+  void operator()(message::ImuMsg const& msg) const
+  {
+    switch (msg.param) {
+      case message::ImuData::ACCEL_X:
+        push_msg(message::ImuMsg{ message::ImuData::ACCEL_X, ::imu_accel_x.load() });
+        break;
+      case message::ImuData::ACCEL_Y:
+        push_msg(message::ImuMsg{ message::ImuData::ACCEL_Y, ::imu_accel_y.load() });
+        break;
+      case message::ImuData::ACCEL_Z:
+        push_msg(message::ImuMsg{ message::ImuData::ACCEL_Z, ::imu_accel_z.load() });
+        break;
+      case message::ImuData::GYRO_X:
+        push_msg(message::ImuMsg{ message::ImuData::GYRO_X, ::imu_gyro_x.load() });
+        break;
+      case message::ImuData::GYRO_Y:
+        push_msg(message::ImuMsg{ message::ImuData::GYRO_Y, ::imu_gyro_y.load() });
+        break;
+      case message::ImuData::GYRO_Z:
+        push_msg(message::ImuMsg{ message::ImuData::GYRO_Z, ::imu_gyro_z.load() });
+        break;
+      case message::ImuData::TEMP:
+        push_msg(message::ImuMsg{ message::ImuData::TEMP, ::imu_temp.load() });
+        break;
+    }
+  }
 };
 
-void dispathc_msg()
+void handle_msg()
 {
   while (true) {
     auto const msg{ pop_rx_msg() };
@@ -186,11 +227,8 @@ int run()
   async_at_time_worker_t imu_worker = create_imu_worker<100>();
   async_context_add_at_time_worker_in_ms(&context.core, &imu_worker, 0);
 
-  async_at_time_worker_t motor_drive_worker = create_motor_drive_worker<100>();
-  async_context_add_at_time_worker_in_ms(&context.core, &motor_drive_worker, 0);
-
   while (1) {
-    dispathc_msg();
+    handle_msg();
     async_context_poll(&context.core);
   }
 

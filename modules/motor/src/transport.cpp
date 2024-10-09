@@ -15,7 +15,7 @@ enum class State : uint8_t
   BYTE0 = 0,
   BYTE1,
   BYTE2,
-  22 BYTE3,
+  BYTE3,
   CHECKSUM,
 };
 size_t state_index(State state)
