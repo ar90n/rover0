@@ -243,6 +243,7 @@ class MotorCtrlApp(App[None]):
         self._front_right_motor = self.query_one("#front-right", MotorControl)
         self._rear_left_motor = self.query_one("#rear-left", MotorControl)
         self._rear_right_motor = self.query_one("#rear-right", MotorControl)
+        self._sync_timer = self.set_interval(1 / 10, self._sync_data)
 
     @work(exclusive=False, thread=True)
     def polling_serial(self) -> None:
@@ -312,6 +313,19 @@ class MotorCtrlApp(App[None]):
 
     def _on_drive_power_changed(self, device: MotorDevice, value: int) -> None:
         self._mpsc.put(MotorMsg(type=MessageType.Motor, param=device, value=value))
+
+    def _sync_data(self) -> None:
+        self._mpsc.put(MotorMsg(type=MessageType.Encoder, param=MotorDevice.RearLeft, value=0))
+        self._mpsc.put(MotorMsg(type=MessageType.Encoder, param=MotorDevice.RearRight, value=0))
+        self._mpsc.put(MotorMsg(type=MessageType.Encoder, param=MotorDevice.FrontLeft, value=0))
+        self._mpsc.put(MotorMsg(type=MessageType.Encoder, param=MotorDevice.FrontRight, value=0))
+        self._mpsc.put(MotorMsg(type=MessageType.IMU, param=ImuData.AccelX, value=0))
+        self._mpsc.put(MotorMsg(type=MessageType.IMU, param=ImuData.AccelY, value=0))
+        self._mpsc.put(MotorMsg(type=MessageType.IMU, param=ImuData.AccelZ, value=0))
+        self._mpsc.put(MotorMsg(type=MessageType.IMU, param=ImuData.GyroX, value=0))
+        self._mpsc.put(MotorMsg(type=MessageType.IMU, param=ImuData.GyroY, value=0))
+        self._mpsc.put(MotorMsg(type=MessageType.IMU, param=ImuData.GyroZ, value=0))
+
 
 
 if __name__ == "__main__":
