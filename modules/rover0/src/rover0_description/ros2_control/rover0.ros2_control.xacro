@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:macro name="rover0_ros2_control" params="name prefix">
+
+    <ros2_control name="${name}" type="system">
+      <hardware>
+          <plugin>rover0_hardware_interface/Rover0HardwareInterface</plugin>
+      </hardware>
+    </ros2_control>
+
+  </xacro:macro>
+
+</robot>

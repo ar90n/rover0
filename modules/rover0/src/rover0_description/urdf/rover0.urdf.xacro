@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="rover0">
+  <xacro:arg name="prefix" default="" />
+
+  <!-- Import Rover0 macro -->
+  <xacro:include filename="$(find rover0_description)/urdf/rover0_description.urdf.xacro" />
+
+  <!-- Import Rviz colors -->
+  <xacro:include filename="$(find rover0_description)/urdf/rover0.materials.xacro" />
+
+  <!-- Import Rover0 ros2_control description -->
+  <xacro:include filename="$(find rover0_description)/ros2_control/rover0.ros2_control.xacro" />
+
+  <xacro:rover0 prefix="$(arg prefix)" />
+
+  <xacro:rover0_ros2_control name="Rover0" prefix="$(arg prefix)"/>
+</robot>
