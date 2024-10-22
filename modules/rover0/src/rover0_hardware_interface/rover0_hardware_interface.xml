@@ -1,7 +1,7 @@
 <library path="rover0_hardware_interface">
     <class name="rover0_hardware_interface/Rover0HardwareInterface"
            type="rover0_hardware_interface::Rover0HardwareInterface"
-           base_class_type="hardware_interface::SystemINterface">
+           base_class_type="hardware_interface::SystemInterface">
         <description>Hardware interface for the rover0</description>
     </class>
 </library>

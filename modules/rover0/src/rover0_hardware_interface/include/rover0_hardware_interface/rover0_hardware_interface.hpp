@@ -2,12 +2,15 @@
 
 #include "hardware_interface/system_interface.hpp"
 #include "pluginlib/class_list_macros.hpp"
+#include "rclcpp/macros.hpp"
 
 namespace rover0_hardware_interface
 {
     class Rover0HardwareInterface : public hardware_interface::SystemInterface
     {
     public:
+        RCLCPP_SHARED_PTR_DEFINITIONS(Rover0HardwareInterface)
+
         Rover0HardwareInterface() = default;
         virtual ~Rover0HardwareInterface() = default;
 

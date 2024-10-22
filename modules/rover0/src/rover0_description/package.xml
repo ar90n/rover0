@@ -3,7 +3,7 @@
 <package format="3">
   <name>rover0_description</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
+  <description>Descriptions for rover0</description>
   <maintainer email="argon.argon.argon@gmail.com">root</maintainer>
   <license>MIT</license>
 

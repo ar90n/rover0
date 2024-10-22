@@ -7,17 +7,14 @@ endif()
 
 # find dependencies
 find_package(ament_cmake_auto REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(hardware_interface REQUIRED)
-
 ament_auto_find_build_dependencies()
 
 ament_auto_add_library(
   ${PROJECT_NAME} SHARED
-  src/motorboard_hardware_interface.cpp
+  src/rover0_hardware_interface.cpp
 )
 
-pluginlib_export_plugin_description_file(hardware_interface motorboard_hardware_interface.xml)
+pluginlib_export_plugin_description_file(hardware_interface rover0_hardware_interface.xml)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
