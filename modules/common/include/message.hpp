@@ -59,10 +59,10 @@ namespace message
       struct
       {
         MsgType type;
-        T::param_type param;
-        T::value_type value;
+        typename T::param_type param;
+        typename T::value_type value;
       } msg;
-    } ser{.msg = {.type = msg.type, .param = msg.param, .value = msg.value}};
+    } ser{.msg = {msg.type, msg.param, msg.value}};
     return ser.raw;
   }
 
@@ -75,8 +75,8 @@ namespace message
       struct
       {
         MsgType type;
-        T::param_type param;
-        T::value_type value;
+        typename T::param_type param;
+        typename T::value_type value;
       } msg;
     } deser{.raw = raw};
     return T{.param = deser.msg.param, .value = deser.msg.value};

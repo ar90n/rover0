@@ -1,5 +1,6 @@
 #include <cstdint>
 #include <functional>
+#include <iostream>
 
 #include "endian_utils.hpp"
 #include "queue.hpp"
@@ -36,6 +37,10 @@ static std::array<uint8_t, 4> buffer;
 
 namespace transport {
 void init(Writer &&writer) { ::writer = writer; }
+
+void reset() {
+  state = State::BYTE0;
+}
 
 std::optional<uint32_t> consume(uint8_t byte) {
   std::optional<uint32_t> ret{std::nullopt};

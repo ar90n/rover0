@@ -2,9 +2,9 @@ cmake_minimum_required(VERSION 3.12)
 project(common VERSION 1.0.0 LANGUAGES CXX)
 
 # Set the source directory
-set(SRC_DIR ${CMAKE_SOURCE_DIR}/src)
-set(INCLUDE_DIR ${CMAKE_SOURCE_DIR}/include)
-set(TEST_DIR ${CMAKE_SOURCE_DIR}/test)
+set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
+set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
+set(TEST_DIR ${CMAKE_CURRENT_SOURCE_DIR}/test)
 
 # Create a static library
 add_library(${PROJECT_NAME} STATIC
@@ -48,7 +48,7 @@ install(EXPORT ${PROJECT_NAME}Targets
     DESTINATION lib/cmake/${PROJECT_NAME}
 )
 
-add_custom_target(test
+add_custom_target(${PROJECT_NAME}-test
     COMMAND g++ -std=c++20 ${SRC_DIR}/endian_utils.cpp ${SRC_DIR}/message.cpp ${TEST_DIR}/main.cpp ${TEST_DIR}/endian_utils_test.cpp ${TEST_DIR}/message_test.cpp -o common-test -I ${SRC_DIR} -I ${INCLUDE_DIR}
     COMMENT "Run test"
 )
