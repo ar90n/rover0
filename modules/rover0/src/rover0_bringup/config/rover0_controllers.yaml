@@ -3,3 +3,10 @@ controller_manager:
     update_rate: 50
     joint_state_broadcaster:
       type: joint_state_broadcaster/JointStateBroadcaster
+    imu_sensor_broadcaster:
+      type: imu_sensor_broadcaster/IMUSensorBroadcaster
+
+imu_sensor_broadcaster:
+  ros__parameters:
+    sensor_name: "imu_sensor"
+    frame_id: "imu_link"

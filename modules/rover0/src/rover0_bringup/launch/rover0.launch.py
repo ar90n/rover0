@@ -50,10 +50,10 @@ def generate_launch_description():
         arguments=["joint_state_broadcaster", "-c", "/controller_manager"],
     )
 
-    robot_controller_spawner = Node(
+    imu_sensor_broadcaster_spawner = Node(
         package="controller_manager",
         executable="spawner",
-        arguments=["robot_controller", "-c", "/controller_manager"],
+        arguments=["imu_sensor_broadcaster", "-c", "/controller_manager"],
     )
 
     rviz_node = Node(
@@ -66,7 +66,7 @@ def generate_launch_description():
     return LaunchDescription([
         control_node,
         robot_state_pub_node,
-        #joint_state_broadcaster_spawner,
-        #robot_controller_spawner,
+        joint_state_broadcaster_spawner,
+        imu_sensor_broadcaster_spawner,
         #rviz_node
     ])
