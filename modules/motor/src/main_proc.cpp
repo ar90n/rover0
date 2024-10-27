@@ -24,17 +24,17 @@ auto motor_front_left  = device::FrontLeftMotor::instance();
 auto motor_front_right = device::FrontRightMotor::instance();
 auto imu_              = device::IMU::instance();
 
-std::atomic<uint16_t> motor_rear_left_encoder_value   = 0;
-std::atomic<uint16_t> motor_rear_right_encoder_value  = 0;
-std::atomic<uint16_t> motor_front_left_encoder_value  = 0;
-std::atomic<uint16_t> motor_front_right_encoder_value = 0;
-std::atomic<int16_t>  imu_accel_x                     = 0;
-std::atomic<int16_t>  imu_accel_y                     = 0;
-std::atomic<int16_t>  imu_accel_z                     = 0;
-std::atomic<int16_t>  imu_gyro_x                      = 0;
-std::atomic<int16_t>  imu_gyro_y                      = 0;
-std::atomic<int16_t>  imu_gyro_z                      = 0;
-std::atomic<int16_t>  imu_temp                        = 0;
+std::atomic<int16_t> motor_rear_left_encoder_value   = 0;
+std::atomic<int16_t> motor_rear_right_encoder_value  = 0;
+std::atomic<int16_t> motor_front_left_encoder_value  = 0;
+std::atomic<int16_t> motor_front_right_encoder_value = 0;
+std::atomic<int16_t> imu_accel_x                     = 0;
+std::atomic<int16_t> imu_accel_y                     = 0;
+std::atomic<int16_t> imu_accel_z                     = 0;
+std::atomic<int16_t> imu_gyro_x                      = 0;
+std::atomic<int16_t> imu_gyro_y                      = 0;
+std::atomic<int16_t> imu_gyro_z                      = 0;
+std::atomic<int16_t> imu_temp                        = 0;
 
 template<typename T>
 void push_msg(T const& msg)
@@ -61,16 +61,16 @@ async_at_time_worker_t create_motor_encoder_worker()
   return task::create_scheduled_worker_in_ms<Interval>(
     [](async_context_t* context, async_at_time_worker_t* worker) {
       if (auto const cnt = motor_rear_left.get_encoder_value(); cnt.has_value()) {
-        ::motor_rear_left_encoder_value.store(cnt.value());
+        motor_rear_left_encoder_value += cnt.value();
       }
       if (auto const cnt = motor_front_left.get_encoder_value(); cnt.has_value()) {
-        ::motor_front_left_encoder_value.store(cnt.value());
+        motor_front_left_encoder_value += cnt.value();
       }
       if (auto const cnt = motor_rear_right.get_encoder_value(); cnt.has_value()) {
-        ::motor_rear_right_encoder_value.store(cnt.value());
+        motor_rear_right_encoder_value += cnt.value();
       }
       if (auto const cnt = motor_front_right.get_encoder_value(); cnt.has_value()) {
-        ::motor_front_right_encoder_value.store(cnt.value());
+        motor_front_right_encoder_value += cnt.value();
       }
     }
   );
@@ -149,22 +149,22 @@ struct MsgVisitor
   void operator()(message::EncoderMsg const& msg) const
   {
     switch (msg.param) {
-      case message::MotorDevice::REAR_LEFT:
+      case message::MotorDevice::REAR_LEFT: {
         push_msg(message::EncoderMsg{ message::MotorDevice::REAR_LEFT,
-                                      ::motor_rear_left_encoder_value.load() });
-        break;
-      case message::MotorDevice::REAR_RIGHT:
+                                      ::motor_rear_left_encoder_value.exchange(0) });
+      } break;
+      case message::MotorDevice::REAR_RIGHT: {
         push_msg(message::EncoderMsg{ message::MotorDevice::REAR_RIGHT,
-                                      ::motor_rear_right_encoder_value.load() });
-        break;
-      case message::MotorDevice::FRONT_LEFT:
+                                      ::motor_rear_right_encoder_value.exchange(0) });
+      } break;
+      case message::MotorDevice::FRONT_LEFT: {
         push_msg(message::EncoderMsg{ message::MotorDevice::FRONT_LEFT,
-                                      ::motor_front_left_encoder_value.load() });
-        break;
-      case message::MotorDevice::FRONT_RIGHT:
+                                      ::motor_front_left_encoder_value.exchange(0) });
+      } break;
+      case message::MotorDevice::FRONT_RIGHT: {
         push_msg(message::EncoderMsg{ message::MotorDevice::FRONT_RIGHT,
-                                      ::motor_front_right_encoder_value.load() });
-        break;
+                                      ::motor_front_right_encoder_value.exchange(0) });
+      } break;
     }
   }
   void operator()(message::ImuMsg const& msg) const
@@ -221,10 +221,10 @@ int run()
   async_at_time_worker_t led_heartbeat_worker = create_led_heartbeat_worker<500>();
   async_context_add_at_time_worker_in_ms(&context.core, &led_heartbeat_worker, 0);
 
-  async_at_time_worker_t motor_encoder_worker = create_motor_encoder_worker<100>();
+  async_at_time_worker_t motor_encoder_worker = create_motor_encoder_worker<1>();
   async_context_add_at_time_worker_in_ms(&context.core, &motor_encoder_worker, 0);
 
-  async_at_time_worker_t imu_worker = create_imu_worker<100>();
+  async_at_time_worker_t imu_worker = create_imu_worker<5>();
   async_context_add_at_time_worker_in_ms(&context.core, &imu_worker, 0);
 
   while (1) {

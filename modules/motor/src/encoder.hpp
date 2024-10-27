@@ -32,10 +32,14 @@ public:
 
   std::optional<uint16_t> get()
   {
-    std::optional<uint16_t> ret{ std::nullopt };
-    auto                    pio = reinterpret_cast<PIO>(PIO_BASE);
+    auto pio = reinterpret_cast<PIO>(PIO_BASE);
+    if (pio_sm_get_rx_fifo_level(pio, SM) == 0) {
+      return std::nullopt;
+    }
+
+    uint16_t ret{ 0 };
     while (0 < pio_sm_get_rx_fifo_level(pio, SM)) {
-      ret = 255 - static_cast<uint16_t>(pio_sm_get(pio, SM));
+      ret += 255 - static_cast<uint16_t>(pio_sm_get(pio, SM));
     }
 
     return ret;

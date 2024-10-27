@@ -34,7 +34,7 @@ static inline void encoder_program_init(PIO pio, uint sm, uint offset, uint pin)
     pio_sm_set_consecutive_pindirs(pio, sm, pin, 1, false);
     sm_config_set_in_shift(&c, false, false, 0);
 
-    constexpr float pio_clock{10000.0f}; // 10[kHz]
+    constexpr float pio_clock{100000.0f}; // 100[kHz]
     float const div{clock_get_hz(clk_sys) / pio_clock};
     sm_config_set_clkdiv(&c, div);
 
