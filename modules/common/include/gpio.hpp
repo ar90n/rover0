@@ -65,7 +65,7 @@ private:
       mp::assoc_list::append<PIN, std::nullptr_t, _gpio_tag>();
 
   Gpio() {
-    gpio_set_function(PIN, static_cast<gpio_function>(FUNC));
+    gpio_set_function(PIN, static_cast<gpio_function_t>(FUNC));
 
     if constexpr (FUNC == GPIO_FUNC_SIO) {
       gpio_init(PIN);
