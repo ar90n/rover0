@@ -19,7 +19,6 @@ add_executable(rover0-motor
     ${SRC_DIR}/main.cpp
     ${SRC_DIR}/comm_proc.cpp
     ${SRC_DIR}/main_proc.cpp
-    ${SRC_DIR}/transport.cpp
     ${SRC_DIR}/logger.cpp
 )
 
