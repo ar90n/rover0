@@ -243,7 +243,7 @@ class MotorCtrlApp(App[None]):
         self._front_right_motor = self.query_one("#front-right", MotorControl)
         self._rear_left_motor = self.query_one("#rear-left", MotorControl)
         self._rear_right_motor = self.query_one("#rear-right", MotorControl)
-        self._sync_timer = self.set_interval(1 / 10, self._sync_data)
+        self._sync_timer = self.set_interval(1 / 2, self._sync_data)
 
     @work(exclusive=False, thread=True)
     def polling_serial(self) -> None:
