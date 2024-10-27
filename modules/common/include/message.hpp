@@ -45,7 +45,7 @@ namespace message
   };
 
   using MotorMsg = Message<MsgType::MOTOR, MotorDevice, int16_t>;
-  using EncoderMsg = Message<MsgType::ENCODER, MotorDevice, uint16_t>;
+  using EncoderMsg = Message<MsgType::ENCODER, MotorDevice, int16_t>;
   using ImuMsg = Message<MsgType::IMU, ImuData, int16_t>;
   using RxMsg = std::variant<MotorMsg, EncoderMsg, ImuMsg>;
   using TxMsg = std::variant<EncoderMsg, ImuMsg>;
