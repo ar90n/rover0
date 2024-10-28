@@ -120,13 +120,13 @@ void rover0_hardware_interface::IMUState::update(message::ImuData param, int16_t
 
 double rover0_hardware_interface::IMUState::calc_linear_acceleration(int16_t value) const
 {
-    double const acc_coef{2 * 2.0 / 65536.0};
+    static constexpr double acc_coef{2 * 2.0 / 65536.0};
     return acc_coef * static_cast<double>(value);
 }
 
 double rover0_hardware_interface::IMUState::calc_angular_velocity(int16_t value) const
 {
-    double const gyro_coef{2 * 250 / 65536.0};
+    static constexpr double gyro_coef{2 * 250 / 65536.0};
     return gyro_coef * static_cast<double>(value);
 }
 
