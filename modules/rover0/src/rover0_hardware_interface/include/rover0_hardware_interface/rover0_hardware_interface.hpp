@@ -8,6 +8,56 @@
 
 namespace rover0_hardware_interface
 {
+
+    class WheelState
+    {
+    public:
+        double position;
+        double velocity;
+
+        WheelState(std::string &name, int16_t encoder_tics_per_revolution);
+        ~WheelState() = default;
+
+        void insert_state_interfaces(std::vector<hardware_interface::StateInterface> &state_interfaces);
+        void update(int16_t delta_tics, double delta_secs);
+
+    private:
+        std::string name;
+        int16_t const encoder_tics_per_revolution;
+
+        hardware_interface::StateInterface create_position_state_interface();
+        hardware_interface::StateInterface create_velocity_state_interface();
+    };
+
+    class IMUState
+    {
+    public:
+        IMUState(std::string &name);
+        ~IMUState() = default;
+
+        void insert_state_interfaces(std::vector<hardware_interface::StateInterface> &state_interfaces);
+        void update(message::ImuData param, int16_t value);
+
+    private:
+        std::string name;
+        double orientation_{std::numeric_limits<double>::quiet_NaN()};
+        std::array<double, 3> angular_velocity_{0.0, 0.0, 0.0};
+        std::array<double, 3> linear_acceleration_{0.0, 0.0, 0.0};
+
+        double calc_linear_acceleration(int16_t value) const;
+        double calc_angular_velocity(int16_t value) const;
+        hardware_interface::StateInterface create_orientation_x_state_interface();
+        hardware_interface::StateInterface create_orientation_y_state_interface();
+        hardware_interface::StateInterface create_orientation_z_state_interface();
+        hardware_interface::StateInterface create_orientation_w_state_interface();
+        hardware_interface::StateInterface create_angular_velocity_x_state_interface();
+        hardware_interface::StateInterface create_angular_velocity_y_state_interface();
+        hardware_interface::StateInterface create_angular_velocity_z_state_interface();
+        hardware_interface::StateInterface create_linear_acceleration_x_state_interface();
+        hardware_interface::StateInterface create_linear_acceleration_y_state_interface();
+        hardware_interface::StateInterface create_linear_acceleration_z_state_interface();
+    };
+
     class Rover0HardwareInterface : public hardware_interface::SystemInterface
     {
         struct Config
@@ -18,6 +68,7 @@ namespace rover0_hardware_interface
             std::string rear_right_wheel_joint_name{"rear_right_wheel_joint"};
             std::string imu_sensor_name{"imu_sensor"};
             std::string serial_port{"/dev/ttyUSB0"};
+            int16_t encoder_tics_per_revolution{64};
             int timeout{1000};
         };
 
@@ -40,24 +91,10 @@ namespace rover0_hardware_interface
     private:
         int fd_{-1};
         Config config;
-        std::array<double, 4> orientation_{0.0, 0.0, 0.0, 0.0};
-        std::array<double, 3> angular_velocity_{0.0, 0.0, 0.0};
-        std::array<double, 3> linear_acceleration_{0.0, 0.0, 0.0};
-        std::map<message::ImuData, double &> const imu_data_map{
-            {message::ImuData::ACCEL_X, linear_acceleration_[0]},
-            {message::ImuData::ACCEL_Y, linear_acceleration_[1]},
-            {message::ImuData::ACCEL_Z, linear_acceleration_[2]},
-            {message::ImuData::GYRO_X, angular_velocity_[0]},
-            {message::ImuData::GYRO_Y, angular_velocity_[1]},
-            {message::ImuData::GYRO_Z, angular_velocity_[2]},
-        };
-        std::array<double, 4> wheel_velocities_{0.0, 0.0, 0.0, 0.0};
-        std::array<double, 4> wheel_positions_{0.0, 0.0, 0.0, 0.0};
-        std::map<message::MotorDevice, double &> const wheel_data_map{
-            {message::MotorDevice::FRONT_LEFT, wheel_velocities_[0]},
-            {message::MotorDevice::FRONT_RIGHT, wheel_velocities_[1]},
-            {message::MotorDevice::REAR_LEFT, wheel_velocities_[2]},
-            {message::MotorDevice::REAR_RIGHT, wheel_velocities_[3]},
-        };
+        std::optional<IMUState> imu_state_{std::nullopt};
+        std::map<message::MotorDevice, WheelState> wheel_states_{};
+
+        void handle_imu_message(const message::ImuMsg &imu_msg);
+        void handle_encoder_message(const message::EncoderMsg &encoder_msg, double delta_secs);
     };
 }
