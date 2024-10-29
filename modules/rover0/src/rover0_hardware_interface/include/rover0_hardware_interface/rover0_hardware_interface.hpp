@@ -32,7 +32,10 @@ namespace rover0_hardware_interface
     class IMUState
     {
     public:
-        IMUState(std::string &name);
+        IMUState(
+            std::string &name,
+            std::array<double, 3> const &linear_acceleration_offset,
+            std::array<double, 3> const &angular_velocity_offset);
         ~IMUState() = default;
 
         void insert_state_interfaces(std::vector<hardware_interface::StateInterface> &state_interfaces);
@@ -41,11 +44,13 @@ namespace rover0_hardware_interface
     private:
         std::string name;
         double orientation_{std::numeric_limits<double>::quiet_NaN()};
-        std::array<double, 3> angular_velocity_{0.0, 0.0, 0.0};
         std::array<double, 3> linear_acceleration_{0.0, 0.0, 0.0};
+        std::array<double, 3> angular_velocity_{0.0, 0.0, 0.0};
+        std::array<double, 3> linear_acceleration_offset_{0.0, 0.0, 0.0};
+        std::array<double, 3> angular_velocity_offset_{0.0, 0.0, 0.0};
 
-        double calc_linear_acceleration(int16_t value) const;
-        double calc_angular_velocity(int16_t value) const;
+        double calc_linear_acceleration(int16_t value, double offset) const;
+        double calc_angular_velocity(int16_t value, double offset) const;
         hardware_interface::StateInterface create_orientation_x_state_interface();
         hardware_interface::StateInterface create_orientation_y_state_interface();
         hardware_interface::StateInterface create_orientation_z_state_interface();

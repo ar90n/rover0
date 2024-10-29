@@ -10,3 +10,23 @@ imu_sensor_broadcaster:
   ros__parameters:
     sensor_name: "imu_sensor"
     frame_id: "imu_link"
+    static_covariance_linear_acceleration:
+      - 1.168703278153771e-05
+      - 0.0
+      - 0.0
+      - 0.0
+      - 1.103400517532549e-05
+      - 0.0
+      - 0.0
+      - 0.0
+      - 2.3499370797708252e-05
+    static_covariance_angular_velocity:
+      - 0.009689936178965297
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.015205154655327513
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.011295287760670902

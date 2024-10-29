@@ -77,7 +77,15 @@ hardware_interface::StateInterface rover0_hardware_interface::WheelState::create
     return hardware_interface::StateInterface(name, hardware_interface::HW_IF_VELOCITY, &velocity);
 }
 
-rover0_hardware_interface::IMUState::IMUState(std::string &name) : name{name} {}
+rover0_hardware_interface::IMUState::IMUState(
+    std::string &name,
+    std::array<double, 3> const &linear_acceleration_offset,
+    std::array<double, 3> const &angular_velocity_offset)
+    : name{name},
+      linear_acceleration_offset_{linear_acceleration_offset},
+      angular_velocity_offset_{angular_velocity_offset}
+{
+}
 
 void rover0_hardware_interface::IMUState::insert_state_interfaces(std::vector<hardware_interface::StateInterface> &state_interfaces)
 {
@@ -98,36 +106,36 @@ void rover0_hardware_interface::IMUState::update(message::ImuData param, int16_t
     switch (param)
     {
     case message::ImuData::GYRO_X:
-        angular_velocity_[0] = calc_angular_velocity(value);
+        angular_velocity_[0] = calc_angular_velocity(value, angular_velocity_offset_[0]);
         break;
     case message::ImuData::GYRO_Y:
-        angular_velocity_[1] = calc_angular_velocity(value);
+        angular_velocity_[1] = calc_angular_velocity(value, angular_velocity_offset_[1]);
         break;
     case message::ImuData::GYRO_Z:
-        angular_velocity_[2] = calc_angular_velocity(value);
+        angular_velocity_[2] = calc_angular_velocity(value, angular_velocity_offset_[2]);
         break;
     case message::ImuData::ACCEL_X:
-        linear_acceleration_[0] = calc_linear_acceleration(value);
+        linear_acceleration_[0] = calc_linear_acceleration(value, linear_acceleration_offset_[0]);
         break;
     case message::ImuData::ACCEL_Y:
-        linear_acceleration_[1] = calc_linear_acceleration(value);
+        linear_acceleration_[1] = calc_linear_acceleration(value, linear_acceleration_offset_[1]);
         break;
     case message::ImuData::ACCEL_Z:
-        linear_acceleration_[2] = calc_linear_acceleration(value);
+        linear_acceleration_[2] = calc_linear_acceleration(value, linear_acceleration_offset_[2]);
         break;
     }
 }
 
-double rover0_hardware_interface::IMUState::calc_linear_acceleration(int16_t value) const
+double rover0_hardware_interface::IMUState::calc_linear_acceleration(int16_t value, double offset) const
 {
     static constexpr double acc_coef{2 * 2.0 / 65536.0};
-    return acc_coef * static_cast<double>(value);
+    return acc_coef * static_cast<double>(value) - offset;
 }
 
-double rover0_hardware_interface::IMUState::calc_angular_velocity(int16_t value) const
+double rover0_hardware_interface::IMUState::calc_angular_velocity(int16_t value, double offset) const
 {
     static constexpr double gyro_coef{2 * 250 / 65536.0};
-    return gyro_coef * static_cast<double>(value);
+    return gyro_coef * static_cast<double>(value) - offset;
 }
 
 hardware_interface::StateInterface rover0_hardware_interface::IMUState::create_orientation_x_state_interface()
@@ -195,7 +203,16 @@ hardware_interface::CallbackReturn rover0_hardware_interface::Rover0HardwareInte
     config.serial_port = info.hardware_parameters.at("serial_port");
     config.encoder_tics_per_revolution = std::stoi(info.hardware_parameters.at("encoder_tics_per_revolution"));
 
-    imu_state_ = IMUState(config.imu_sensor_name);
+    std::array<double, 3> const linear_acceleration_offset{
+        std::stod(info.hardware_parameters.at("imu_linear_acceleration_offset_x")),
+        std::stod(info.hardware_parameters.at("imu_linear_acceleration_offset_y")),
+        std::stod(info.hardware_parameters.at("imu_linear_acceleration_offset_z"))};
+    std::array<double, 3> const angular_velocity_offset{
+        std::stod(info.hardware_parameters.at("imu_angular_velocity_offset_x")),
+        std::stod(info.hardware_parameters.at("imu_angular_velocity_offset_y")),
+        std::stod(info.hardware_parameters.at("imu_angular_velocity_offset_z"))};
+    imu_state_ = IMUState(config.imu_sensor_name, linear_acceleration_offset, angular_velocity_offset);
+
     wheel_states_.emplace(message::MotorDevice::REAR_LEFT, WheelState(config.rear_left_wheel_joint_name, config.encoder_tics_per_revolution));
     wheel_states_.emplace(message::MotorDevice::REAR_RIGHT, WheelState(config.rear_right_wheel_joint_name, config.encoder_tics_per_revolution));
     wheel_states_.emplace(message::MotorDevice::FRONT_LEFT, WheelState(config.front_left_wheel_joint_name, config.encoder_tics_per_revolution));

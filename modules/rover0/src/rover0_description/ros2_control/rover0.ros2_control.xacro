@@ -11,8 +11,14 @@
         <param name="rear_left_wheel_joint_name">rear_left_wheel_joint</param>
         <param name="rear_right_wheel_joint_name">rear_right_wheel_joint</param>
         <param name="imu_sensor_name">imu_sensor</param>
-        <param name="serial_port">/dev/ttyUSB0</param>
+        <param name="serial_port">/dev/ttyUSB1</param>
         <param name="encoder_tics_per_revolution">64</param>
+        <param name="imu_linear_acceleration_offset_x">-0.04001879692077637</param>
+        <param name="imu_linear_acceleration_offset_y">-0.011276155710220337</param>
+        <param name="imu_linear_acceleration_offset_z">0.9002845287322998</param>
+        <param name="imu_angular_velocity_offset_x">-6.8362923339009285</param>
+        <param name="imu_angular_velocity_offset_y">0.2556564286351204</param>
+        <param name="imu_angular_velocity_offset_z">0.06320327520370483</param>
       </hardware>
     </ros2_control>
 
