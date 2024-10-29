@@ -56,6 +56,20 @@ def generate_launch_description():
         arguments=["imu_sensor_broadcaster", "-c", "/controller_manager"],
     )
 
+    imu_filter_madgwick_node = Node(
+        package="imu_filter_madgwick",
+        executable="imu_filter_madgwick_node",
+        output="screen",
+        parameters=[{
+            "use_mag": False,
+            "gain": 0.1,
+        }],
+        remappings=[
+            ('/imu/data_raw', '/imu_sensor_broadcaster/imu'),
+            ('/imu/data', '/imu/filtered')
+        ],
+    )
+
     rviz_node = Node(
         package="rviz2",
         executable="rviz2",
@@ -68,5 +82,6 @@ def generate_launch_description():
         robot_state_pub_node,
         joint_state_broadcaster_spawner,
         imu_sensor_broadcaster_spawner,
+        imu_filter_madgwick_node,
         #rviz_node
     ])

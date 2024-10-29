@@ -121,7 +121,7 @@ void rover0_hardware_interface::IMUState::update(message::ImuData param, int16_t
         linear_acceleration_[1] = calc_linear_acceleration(value, linear_acceleration_offset_[1]);
         break;
     case message::ImuData::ACCEL_Z:
-        linear_acceleration_[2] = calc_linear_acceleration(value, linear_acceleration_offset_[2]);
+        linear_acceleration_[2] = calc_linear_acceleration(value, 0.0);  // skip offset for z-axis because of gravity
         break;
     }
 }
