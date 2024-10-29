@@ -77,6 +77,21 @@ hardware_interface::StateInterface rover0_hardware_interface::WheelState::create
     return hardware_interface::StateInterface(name, hardware_interface::HW_IF_VELOCITY, &velocity);
 }
 
+rover0_hardware_interface::WheelCommand::WheelCommand(std::string &name)
+    : velocity{0.0}, name{name}
+{
+}
+
+void rover0_hardware_interface::WheelCommand::insert_command_interfaces(std::vector<hardware_interface::CommandInterface> &command_interfaces)
+{
+    command_interfaces.emplace_back(create_velocity_command_interface());
+}
+
+hardware_interface::CommandInterface rover0_hardware_interface::WheelCommand::create_velocity_command_interface()
+{
+    return hardware_interface::CommandInterface(name, hardware_interface::HW_IF_VELOCITY, &velocity);
+}
+
 rover0_hardware_interface::IMUState::IMUState(
     std::string &name,
     std::array<double, 3> const &linear_acceleration_offset,
@@ -121,7 +136,7 @@ void rover0_hardware_interface::IMUState::update(message::ImuData param, int16_t
         linear_acceleration_[1] = calc_linear_acceleration(value, linear_acceleration_offset_[1]);
         break;
     case message::ImuData::ACCEL_Z:
-        linear_acceleration_[2] = calc_linear_acceleration(value, 0.0);  // skip offset for z-axis because of gravity
+        linear_acceleration_[2] = calc_linear_acceleration(value, 0.0); // skip offset for z-axis because of gravity
         break;
     }
 }
@@ -218,6 +233,11 @@ hardware_interface::CallbackReturn rover0_hardware_interface::Rover0HardwareInte
     wheel_states_.emplace(message::MotorDevice::FRONT_LEFT, WheelState(config.front_left_wheel_joint_name, config.encoder_tics_per_revolution));
     wheel_states_.emplace(message::MotorDevice::FRONT_RIGHT, WheelState(config.front_right_wheel_joint_name, config.encoder_tics_per_revolution));
 
+    wheel_commands_.emplace(message::MotorDevice::REAR_LEFT, WheelCommand(config.rear_left_wheel_joint_name));
+    wheel_commands_.emplace(message::MotorDevice::REAR_RIGHT, WheelCommand(config.rear_right_wheel_joint_name));
+    wheel_commands_.emplace(message::MotorDevice::FRONT_LEFT, WheelCommand(config.front_left_wheel_joint_name));
+    wheel_commands_.emplace(message::MotorDevice::FRONT_RIGHT, WheelCommand(config.front_right_wheel_joint_name));
+
     return hardware_interface::CallbackReturn::SUCCESS;
 }
 
@@ -283,6 +303,11 @@ std::vector<hardware_interface::StateInterface> rover0_hardware_interface::Rover
 std::vector<hardware_interface::CommandInterface> rover0_hardware_interface::Rover0HardwareInterface::export_command_interfaces()
 {
     std::vector<hardware_interface::CommandInterface> command_interfaces;
+
+    wheel_commands_.at(message::MotorDevice::FRONT_LEFT).insert_command_interfaces(command_interfaces);
+    wheel_commands_.at(message::MotorDevice::FRONT_RIGHT).insert_command_interfaces(command_interfaces);
+    wheel_commands_.at(message::MotorDevice::REAR_LEFT).insert_command_interfaces(command_interfaces);
+    wheel_commands_.at(message::MotorDevice::REAR_RIGHT).insert_command_interfaces(command_interfaces);
 
     return command_interfaces;
 }

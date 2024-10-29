@@ -29,6 +29,22 @@ namespace rover0_hardware_interface
         hardware_interface::StateInterface create_velocity_state_interface();
     };
 
+    class WheelCommand
+    {
+    public:
+        double velocity;
+
+        WheelCommand(std::string &name);
+        ~WheelCommand() = default;
+
+        void insert_command_interfaces(std::vector<hardware_interface::CommandInterface> &command_interfaces);
+
+    private:
+        std::string name;
+
+        hardware_interface::CommandInterface create_velocity_command_interface();
+    };
+
     class IMUState
     {
     public:
@@ -98,6 +114,7 @@ namespace rover0_hardware_interface
         Config config;
         std::optional<IMUState> imu_state_{std::nullopt};
         std::map<message::MotorDevice, WheelState> wheel_states_{};
+        std::map<message::MotorDevice, WheelCommand> wheel_commands_{};
 
         void handle_imu_message(const message::ImuMsg &imu_msg);
         void handle_encoder_message(const message::EncoderMsg &encoder_msg, double delta_secs);
