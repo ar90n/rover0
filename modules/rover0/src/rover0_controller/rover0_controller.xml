@@ -1,0 +1,8 @@
+<library path="rover0_controller">
+  <class name="rover0_controller/Rover0Controller"
+    type="rover0_controller::Rover0Controller"
+    base_class_type="controller_interface::ControllerInterface"
+  >
+    <description> Controller for rover0 </description>
+  </class>
+</library>

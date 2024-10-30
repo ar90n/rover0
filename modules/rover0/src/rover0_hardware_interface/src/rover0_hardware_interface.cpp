@@ -353,6 +353,12 @@ hardware_interface::return_type rover0_hardware_interface::Rover0HardwareInterfa
 
 hardware_interface::return_type rover0_hardware_interface::Rover0HardwareInterface::write(const rclcpp::Time &time, const rclcpp::Duration &period)
 {
+    for (auto &command : wheel_commands_)
+    {
+        transport::send(message::serialize(message::MotorMsg{
+            .param = command.first,
+            .value = static_cast<int16_t>(0.0 < command.second.velocity ? 10000 : -10000)}));
+    }
     return hardware_interface::return_type::OK;
 }
 

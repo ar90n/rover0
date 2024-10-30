@@ -5,6 +5,8 @@ controller_manager:
       type: joint_state_broadcaster/JointStateBroadcaster
     imu_sensor_broadcaster:
       type: imu_sensor_broadcaster/IMUSensorBroadcaster
+    rover0_controller:
+      type: rover0_controller/Rover0Controller
 
 imu_sensor_broadcaster:
   ros__parameters:
@@ -30,3 +32,13 @@ imu_sensor_broadcaster:
       - 0.0
       - 0.0
       - 0.011295287760670902
+
+rover0_controller:
+  ros__parameters:
+    front_left_wheel_joint_name: "front_left_wheel_joint"
+    front_right_wheel_joint_name: "front_right_wheel_joint"
+    rear_left_wheel_joint_name: "rear_left_wheel_joint"
+    rear_right_wheel_joint_name: "rear_right_wheel_joint"
+    wheel_radius: 0.028
+    wheelbase: 0.14
+    track_width: 0.11
