@@ -355,9 +355,11 @@ hardware_interface::return_type rover0_hardware_interface::Rover0HardwareInterfa
 {
     for (auto &command : wheel_commands_)
     {
+        double const ticks_per_sec = config.encoder_tics_per_revolution * (command.second.velocity / (2.0 * std::numbers::pi));
+        int16_t const tics_per_sec_q7 = static_cast<int16_t>(ticks_per_sec * 128.0 + 0.5);
         transport::send(message::serialize(message::MotorMsg{
             .param = command.first,
-            .value = static_cast<int16_t>(0.0 < command.second.velocity ? 10000 : -10000)}));
+            .value = tics_per_sec_q7}));
     }
     return hardware_interface::return_type::OK;
 }
