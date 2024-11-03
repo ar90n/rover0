@@ -53,6 +53,7 @@ void MotorDriver::emergency()
 {
   is_emergency = true;
   drive_power_ = 0;
+  motor_pid.reset();
 }
 
 void MotorDriver::release()

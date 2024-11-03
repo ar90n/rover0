@@ -19,6 +19,11 @@ concept CoeffMutable = requires(T t) {
 };
 
 template<typename T>
+concept Resetable = requires(T t) {
+  { t.reset() } ;
+};
+
+template<typename T>
 class Zero
 {
 public:
@@ -71,6 +76,8 @@ public:
     integral       = std::clamp(integral, minv, maxv);
     return integral;
   }
+
+  void reset() { integral = 0; }
 
 private:
   const T ki;
@@ -182,6 +189,12 @@ public:
     requires CoeffMutable<DerivativeT>
   {
     derivative.set(kd);
+  }
+
+  void reset()
+    requires Resetable<IntegralT>
+  {
+    integral.reset();
   }
 
 private:
