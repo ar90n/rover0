@@ -111,11 +111,15 @@ namespace rover0_hardware_interface
 
     private:
         int fd_{-1};
-        Config config;
+        uint64_t read_call_count_{0};
+        Config config_;
         std::optional<IMUState> imu_state_{std::nullopt};
         std::map<message::MotorDevice, WheelState> wheel_states_{};
         std::map<message::MotorDevice, WheelCommand> wheel_commands_{};
 
+        double seconds_from_last_motor_query_{0.0};
+
+        bool should_query_motor() const;
         void handle_imu_message(const message::ImuMsg &imu_msg);
         void handle_encoder_message(const message::EncoderMsg &encoder_msg, double delta_secs);
     };

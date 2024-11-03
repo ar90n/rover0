@@ -17,7 +17,8 @@
 
 namespace
 {
-    std::array<uint32_t, 10> const queries{
+    static constexpr uint SKIP_READ_COUNT_FOR_MOTOR_QUERY{10};
+    std::array<uint32_t, 6> const imu_queries{
         message::serialize(message::ImuMsg{
             .param = message::ImuData::ACCEL_X,
         }),
@@ -35,7 +36,8 @@ namespace
         }),
         message::serialize(message::ImuMsg{
             .param = message::ImuData::GYRO_Z,
-        }),
+        })};
+    std::array<uint32_t, 4> const motor_queries{
         message::serialize(message::EncoderMsg{
             .param = message::MotorDevice::REAR_LEFT,
         }),
@@ -49,6 +51,11 @@ namespace
             .param = message::MotorDevice::FRONT_RIGHT,
         }),
     };
+
+    double calc_motor_query_delta_secs(rclcpp::Duration const &period)
+    {
+        return SKIP_READ_COUNT_FOR_MOTOR_QUERY * period.seconds();
+    }
 }
 
 rover0_hardware_interface::WheelState::WheelState(std::string &name, int16_t encoder_tics_per_revolution)
@@ -210,13 +217,13 @@ hardware_interface::CallbackReturn rover0_hardware_interface::Rover0HardwareInte
         return hardware_interface::CallbackReturn::ERROR;
     }
 
-    config.front_left_wheel_joint_name = info.hardware_parameters.at("front_left_wheel_joint_name");
-    config.front_right_wheel_joint_name = info.hardware_parameters.at("front_right_wheel_joint_name");
-    config.rear_left_wheel_joint_name = info.hardware_parameters.at("rear_left_wheel_joint_name");
-    config.rear_right_wheel_joint_name = info.hardware_parameters.at("rear_right_wheel_joint_name");
-    config.imu_sensor_name = info.hardware_parameters.at("imu_sensor_name");
-    config.serial_port = info.hardware_parameters.at("serial_port");
-    config.encoder_tics_per_revolution = std::stoi(info.hardware_parameters.at("encoder_tics_per_revolution"));
+    config_.front_left_wheel_joint_name = info.hardware_parameters.at("front_left_wheel_joint_name");
+    config_.front_right_wheel_joint_name = info.hardware_parameters.at("front_right_wheel_joint_name");
+    config_.rear_left_wheel_joint_name = info.hardware_parameters.at("rear_left_wheel_joint_name");
+    config_.rear_right_wheel_joint_name = info.hardware_parameters.at("rear_right_wheel_joint_name");
+    config_.imu_sensor_name = info.hardware_parameters.at("imu_sensor_name");
+    config_.serial_port = info.hardware_parameters.at("serial_port");
+    config_.encoder_tics_per_revolution = std::stoi(info.hardware_parameters.at("encoder_tics_per_revolution"));
 
     std::array<double, 3> const linear_acceleration_offset{
         std::stod(info.hardware_parameters.at("imu_linear_acceleration_offset_x")),
@@ -226,24 +233,24 @@ hardware_interface::CallbackReturn rover0_hardware_interface::Rover0HardwareInte
         std::stod(info.hardware_parameters.at("imu_angular_velocity_offset_x")),
         std::stod(info.hardware_parameters.at("imu_angular_velocity_offset_y")),
         std::stod(info.hardware_parameters.at("imu_angular_velocity_offset_z"))};
-    imu_state_ = IMUState(config.imu_sensor_name, linear_acceleration_offset, angular_velocity_offset);
+    imu_state_ = IMUState(config_.imu_sensor_name, linear_acceleration_offset, angular_velocity_offset);
 
-    wheel_states_.emplace(message::MotorDevice::REAR_LEFT, WheelState(config.rear_left_wheel_joint_name, config.encoder_tics_per_revolution));
-    wheel_states_.emplace(message::MotorDevice::REAR_RIGHT, WheelState(config.rear_right_wheel_joint_name, config.encoder_tics_per_revolution));
-    wheel_states_.emplace(message::MotorDevice::FRONT_LEFT, WheelState(config.front_left_wheel_joint_name, config.encoder_tics_per_revolution));
-    wheel_states_.emplace(message::MotorDevice::FRONT_RIGHT, WheelState(config.front_right_wheel_joint_name, config.encoder_tics_per_revolution));
+    wheel_states_.emplace(message::MotorDevice::REAR_LEFT, WheelState(config_.rear_left_wheel_joint_name, config_.encoder_tics_per_revolution));
+    wheel_states_.emplace(message::MotorDevice::REAR_RIGHT, WheelState(config_.rear_right_wheel_joint_name, config_.encoder_tics_per_revolution));
+    wheel_states_.emplace(message::MotorDevice::FRONT_LEFT, WheelState(config_.front_left_wheel_joint_name, config_.encoder_tics_per_revolution));
+    wheel_states_.emplace(message::MotorDevice::FRONT_RIGHT, WheelState(config_.front_right_wheel_joint_name, config_.encoder_tics_per_revolution));
 
-    wheel_commands_.emplace(message::MotorDevice::REAR_LEFT, WheelCommand(config.rear_left_wheel_joint_name));
-    wheel_commands_.emplace(message::MotorDevice::REAR_RIGHT, WheelCommand(config.rear_right_wheel_joint_name));
-    wheel_commands_.emplace(message::MotorDevice::FRONT_LEFT, WheelCommand(config.front_left_wheel_joint_name));
-    wheel_commands_.emplace(message::MotorDevice::FRONT_RIGHT, WheelCommand(config.front_right_wheel_joint_name));
+    wheel_commands_.emplace(message::MotorDevice::REAR_LEFT, WheelCommand(config_.rear_left_wheel_joint_name));
+    wheel_commands_.emplace(message::MotorDevice::REAR_RIGHT, WheelCommand(config_.rear_right_wheel_joint_name));
+    wheel_commands_.emplace(message::MotorDevice::FRONT_LEFT, WheelCommand(config_.front_left_wheel_joint_name));
+    wheel_commands_.emplace(message::MotorDevice::FRONT_RIGHT, WheelCommand(config_.front_right_wheel_joint_name));
 
     return hardware_interface::CallbackReturn::SUCCESS;
 }
 
 hardware_interface::CallbackReturn rover0_hardware_interface::Rover0HardwareInterface::on_configure(const rclcpp_lifecycle::State &previous_state)
 {
-    fd_ = open(config.serial_port.c_str(), O_RDWR);
+    fd_ = open(config_.serial_port.c_str(), O_RDWR);
     if (fd_ < 0)
     {
         return hardware_interface::CallbackReturn::ERROR;
@@ -314,13 +321,24 @@ std::vector<hardware_interface::CommandInterface> rover0_hardware_interface::Rov
 
 hardware_interface::return_type rover0_hardware_interface::Rover0HardwareInterface::read(const rclcpp::Time &time, const rclcpp::Duration &period)
 {
+    read_call_count_++;
+
     transport::reset();
-    for (auto const &query : queries)
+    for (auto const &query : imu_queries)
     {
         transport::send(query);
     }
 
+    if (should_query_motor())
+    {
+        for (auto const &query : motor_queries)
+        {
+            transport::send(query);
+        }
+    }
+
     uint8_t buf[256];
+    double const motor_query_delta_secs{calc_motor_query_delta_secs(period)};
     while (true)
     {
         auto const len = ::read(fd_, buf, sizeof(buf));
@@ -343,7 +361,7 @@ hardware_interface::return_type rover0_hardware_interface::Rover0HardwareInterfa
             }
             else if (message::get_msg_type(recv.value()) == message::MsgType::ENCODER)
             {
-                handle_encoder_message(message::deserialize<message::EncoderMsg>(recv.value()), period.seconds());
+                handle_encoder_message(message::deserialize<message::EncoderMsg>(recv.value()), motor_query_delta_secs);
             }
         }
     }
@@ -355,13 +373,19 @@ hardware_interface::return_type rover0_hardware_interface::Rover0HardwareInterfa
 {
     for (auto &command : wheel_commands_)
     {
-        double const ticks_per_sec = config.encoder_tics_per_revolution * (command.second.velocity / (2.0 * std::numbers::pi));
+        double const rotate_per_sec = command.second.velocity / (2.0 * std::numbers::pi); // command velocity is in rad/s
+        double const ticks_per_sec = config_.encoder_tics_per_revolution * rotate_per_sec;
         int16_t const tics_per_sec_q7 = static_cast<int16_t>(ticks_per_sec * 128.0 + 0.5);
         transport::send(message::serialize(message::MotorMsg{
             .param = command.first,
             .value = tics_per_sec_q7}));
     }
     return hardware_interface::return_type::OK;
+}
+
+bool rover0_hardware_interface::Rover0HardwareInterface::should_query_motor() const
+{
+    return (read_call_count_ % SKIP_READ_COUNT_FOR_MOTOR_QUERY) == 0;
 }
 
 void rover0_hardware_interface::Rover0HardwareInterface::handle_imu_message(const message::ImuMsg &imu_msg)

@@ -22,17 +22,16 @@ controller_interface::return_type rover0_controller::Rover0Controller::update(co
         return controller_interface::return_type::OK;
     }
 
-    double const r = (config.wheel_radius + config.track_width) / 2;
+    double const r = (config.wheelbase + config.track_width) / 2;
+    double const front_left_wheel_angular_velocity = (cmd_vel_twist_->linear.x - cmd_vel_twist_->linear.y - r * cmd_vel_twist_->angular.z) / config.wheel_radius;
+    double const front_right_wheel_angular_velocity = (cmd_vel_twist_->linear.x + cmd_vel_twist_->linear.y + r * cmd_vel_twist_->angular.z) / config.wheel_radius;
+    double const rear_left_wheel_angular_velocity = (cmd_vel_twist_->linear.x + cmd_vel_twist_->linear.y - r * cmd_vel_twist_->angular.z) / config.wheel_radius;
+    double const rear_right_wheel_angular_velocity = (cmd_vel_twist_->linear.x - cmd_vel_twist_->linear.y + r * cmd_vel_twist_->angular.z) / config.wheel_radius;
 
-    double front_left_wheel_velocity  = (cmd_vel_twist_->linear.x - cmd_vel_twist_->linear.y - r * cmd_vel_twist_->angular.z)/ config.wheel_radius;
-    double front_right_wheel_velocity = (cmd_vel_twist_->linear.x + cmd_vel_twist_->linear.y + r * cmd_vel_twist_->angular.z)/ config.wheel_radius;
-    double rear_left_wheel_velocity   = (cmd_vel_twist_->linear.x + cmd_vel_twist_->linear.y - r * cmd_vel_twist_->angular.z)/ config.wheel_radius;
-    double rear_right_wheel_velocity  = (cmd_vel_twist_->linear.x - cmd_vel_twist_->linear.y + r * cmd_vel_twist_->angular.z)/ config.wheel_radius;
-
-    command_interface_map_.at(config.front_left_wheel_joint_name).get().set_value(front_left_wheel_velocity);
-    command_interface_map_.at(config.front_right_wheel_joint_name).get().set_value(front_right_wheel_velocity);
-    command_interface_map_.at(config.rear_left_wheel_joint_name).get().set_value(rear_left_wheel_velocity);
-    command_interface_map_.at(config.rear_right_wheel_joint_name).get().set_value(rear_right_wheel_velocity);
+    command_interface_map_.at(config.front_left_wheel_joint_name).get().set_value(front_left_wheel_angular_velocity);
+    command_interface_map_.at(config.front_right_wheel_joint_name).get().set_value(front_right_wheel_angular_velocity);
+    command_interface_map_.at(config.rear_left_wheel_joint_name).get().set_value(rear_left_wheel_angular_velocity);
+    command_interface_map_.at(config.rear_right_wheel_joint_name).get().set_value(rear_right_wheel_angular_velocity);
     return controller_interface::return_type::OK;
 }
 
