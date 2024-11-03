@@ -20,6 +20,7 @@ add_executable(rover0-motor
     ${SRC_DIR}/comm_proc.cpp
     ${SRC_DIR}/main_proc.cpp
     ${SRC_DIR}/logger.cpp
+    ${SRC_DIR}/motor_driver.cpp
 )
 
 # Link the target with libraries

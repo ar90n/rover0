@@ -9,7 +9,7 @@
 .wrap_target
     mov osr !null
     in pins 1
-    out y 8
+    out y 6  // set 64 to y register
     mov x y
 read:
     mov OSR ISR 
