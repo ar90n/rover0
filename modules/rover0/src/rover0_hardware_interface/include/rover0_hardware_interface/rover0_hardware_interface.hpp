@@ -90,7 +90,6 @@ namespace rover0_hardware_interface
             std::string imu_sensor_name{"imu_sensor"};
             std::string serial_port{"/dev/ttyUSB0"};
             int16_t encoder_tics_per_revolution{64};
-            int timeout{1000};
         };
 
     public:
@@ -116,8 +115,6 @@ namespace rover0_hardware_interface
         std::optional<IMUState> imu_state_{std::nullopt};
         std::map<message::MotorDevice, WheelState> wheel_states_{};
         std::map<message::MotorDevice, WheelCommand> wheel_commands_{};
-
-        double seconds_from_last_motor_query_{0.0};
 
         bool should_query_motor() const;
         void handle_imu_message(const message::ImuMsg &imu_msg);
