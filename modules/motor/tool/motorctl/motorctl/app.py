@@ -22,7 +22,6 @@ from motorctl.transport import (
     MotorMsg,
     MsgParser,
     get_msg_type_key,
-    serialize_msg,
 )
 
 
@@ -83,13 +82,13 @@ class MotorControl(Widget):
 
     @on(Button.Pressed, "#fast-backward")
     def drive_fast_backward(self) -> None:
-        self.drive_power -= 1000
-        self.drive_power = max(-32768, self.drive_power)
+        self.drive_power -= 32 
+        self.drive_power = max(-320, self.drive_power)
 
     @on(Button.Pressed, "#backward")
     def drive_backward(self) -> None:
-        self.drive_power -= 100
-        self.drive_power = max(-32768, self.drive_power)
+        self.drive_power -= 1
+        self.drive_power = max(-320, self.drive_power)
 
     @on(Button.Pressed, "#stop")
     def stop(self) -> None:
@@ -97,13 +96,13 @@ class MotorControl(Widget):
 
     @on(Button.Pressed, "#forward")
     def drive_forward(self) -> None:
-        self.drive_power += 100
-        self.drive_power = min(32767, self.drive_power)
+        self.drive_power += 1
+        self.drive_power = min(320, self.drive_power)
 
     @on(Button.Pressed, "#fast-forward")
     def drive_fast_forward(self) -> None:
-        self.drive_power += 1000
-        self.drive_power = min(32767, self.drive_power)
+        self.drive_power += 32
+        self.drive_power = min(320, self.drive_power)
 
     def watch_drive_power(self, value: int) -> None:
         self.query_one("#drive-power").update(str(value))
@@ -243,7 +242,7 @@ class MotorCtrlApp(App[None]):
         self._front_right_motor = self.query_one("#front-right", MotorControl)
         self._rear_left_motor = self.query_one("#rear-left", MotorControl)
         self._rear_right_motor = self.query_one("#rear-right", MotorControl)
-        self._sync_timer = self.set_interval(1 / 2, self._sync_data)
+        self._sync_timer = self.set_interval(1 / 10, self._sync_data)
 
     @work(exclusive=False, thread=True)
     def polling_serial(self) -> None:
@@ -258,7 +257,7 @@ class MotorCtrlApp(App[None]):
         while not self._should_quit:
             try:
                 msg = self._mpsc.get(False)
-                self._serial_port.write(serialize_msg(msg))
+                self._serial_port.write(self._msg_parser.serialize(msg))
             except queue.Empty:
                 pass
 
@@ -312,7 +311,7 @@ class MotorCtrlApp(App[None]):
         return max(0, (1.0 / 30.0) - last_time_ns / 1_000_000_000)
 
     def _on_drive_power_changed(self, device: MotorDevice, value: int) -> None:
-        self._mpsc.put(MotorMsg(type=MessageType.Motor, param=device, value=value))
+        self._mpsc.put(MotorMsg(type=MessageType.Motor, param=device, value=value * 128))
 
     def _sync_data(self) -> None:
         self._mpsc.put(MotorMsg(type=MessageType.Encoder, param=MotorDevice.RearLeft, value=0))

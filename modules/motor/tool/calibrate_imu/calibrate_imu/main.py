@@ -9,7 +9,6 @@ from calibrate_imu.transport import (
     ImuMsg,
     MessageType,
     MsgParser,
-    serialize_msg,
 )
 
 output_template: str = """## offset
@@ -141,7 +140,7 @@ def main(serial_port: Serial, num_samples: int = 8192) -> None:
 
     for i in range(num_samples):
         for msg in request_query:
-            serial_port.write(serialize_msg(msg))
+            serial_port.write(msg_parser.serialize(msg))
         sleep(0.01)
 
         cur_bytes = serial_port.read(serial_port.in_waiting)
