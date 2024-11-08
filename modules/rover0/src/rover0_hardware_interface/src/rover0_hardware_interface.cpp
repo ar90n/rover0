@@ -349,20 +349,7 @@ std::vector<hardware_interface::CommandInterface> rover0_hardware_interface::Rov
 hardware_interface::return_type rover0_hardware_interface::Rover0HardwareInterface::read(const rclcpp::Time &time, const rclcpp::Duration &period)
 {
     read_call_count_++;
-
     transport::reset();
-    for (auto const &query : imu_queries)
-    {
-        transport::send(query);
-    }
-
-    if (should_query_motor())
-    {
-        for (auto const &query : motor_queries)
-        {
-            transport::send(query);
-        }
-    }
 
     uint8_t buf[256];
     double const motor_query_delta_secs{calc_motor_query_delta_secs(period)};
@@ -390,6 +377,19 @@ hardware_interface::return_type rover0_hardware_interface::Rover0HardwareInterfa
             {
                 handle_encoder_message(message::deserialize<message::EncoderMsg>(recv.value()), motor_query_delta_secs);
             }
+        }
+    }
+
+    for (auto const &query : imu_queries)
+    {
+        transport::send(query);
+    }
+
+    if (should_query_motor())
+    {
+        for (auto const &query : motor_queries)
+        {
+            transport::send(query);
         }
     }
 
