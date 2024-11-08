@@ -245,6 +245,33 @@ hardware_interface::CallbackReturn rover0_hardware_interface::Rover0HardwareInte
     wheel_commands_.emplace(message::MotorDevice::FRONT_LEFT, WheelCommand(config_.front_left_wheel_joint_name));
     wheel_commands_.emplace(message::MotorDevice::FRONT_RIGHT, WheelCommand(config_.front_right_wheel_joint_name));
 
+    for (const hardware_interface::ComponentInfo &joint : info.joints)
+    {
+        if (joint.command_interfaces.size() != 1)
+        {
+            RCLCPP_FATAL(rclcpp::get_logger("rover0_hardware_interface"), "Joint '%s' has %d command interfaces, 1 expected", joint.name.c_str(), joint.command_interfaces.size());
+            return hardware_interface::CallbackReturn::ERROR;
+        }
+
+        if (joint.command_interfaces[0].name != hardware_interface::HW_IF_VELOCITY)
+        {
+            RCLCPP_FATAL(rclcpp::get_logger("rover0_hardware_interface"), "Joint '%s' has command interface '%s', 'velocity' expected", joint.name.c_str(), joint.command_interfaces[0].name.c_str());
+            return hardware_interface::CallbackReturn::ERROR;
+        }
+
+        if (joint.state_interfaces.size() != 1)
+        {
+            RCLCPP_FATAL(rclcpp::get_logger("rover0_hardware_interface"), "Joint '%s' has %d state interfaces, 1 expected", joint.name.c_str(), joint.state_interfaces.size());
+            return hardware_interface::CallbackReturn::ERROR;
+        }
+
+        if(joint.state_interfaces[0].name != hardware_interface::HW_IF_POSITION)
+        {
+            RCLCPP_FATAL(rclcpp::get_logger("rover0_hardware_interface"), "Joint '%s' has state interface '%s', 'position' expected", joint.name.c_str(), joint.state_interfaces[0].name.c_str());
+            return hardware_interface::CallbackReturn::ERROR;
+        }
+    }
+
     return hardware_interface::CallbackReturn::SUCCESS;
 }
 
