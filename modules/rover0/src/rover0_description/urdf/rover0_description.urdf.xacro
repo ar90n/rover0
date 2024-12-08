@@ -1,176 +1,303 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
   <xacro:macro name="rover0" params="prefix">
-    <!-- Constants for robot dimensions -->
     <xacro:property name="PI" value="3.1415926535897931"/>
-    <!-- arbitrary value for base mass -->
+
     <xacro:property name="base_width" value="0.14" />
     <xacro:property name="base_length" value="0.255" />
     <xacro:property name="base_height" value="0.058" />
     <xacro:property name="base_mass" value="0.3" />
-    <!-- arbitrary value for wheel mass -->
-    <xacro:property name="wheel_len" value="0.025" />
+
     <xacro:property name="wheel_radius" value="0.028" />
+    <xacro:property name="wheel_width" value="0.025" />
+    <xacro:property name="wheel_ygap" value="0.01" />
+    <xacro:property name="wheel_zoff" value="0.021" />
+    <xacro:property name="wheel_xoff" value="0.055" />
     <xacro:property name="wheel_mass" value="0.3" />
-    <xacro:property name="z_offset" value="-0.021" />
-    <xacro:property name="y_offset" value="0.055" />
+
+    <xacro:property name="lidar_mount_height" value="0.092" />
+    <xacro:property name="lidar_mount_xoff" value="-0.078" />
+
+    <xacro:property name="lidar_height" value="0.032" />
+    <xacro:property name="lidar_radius" value="0.034" />
+
+    <!-- Define inertial property macros  -->
+    <xacro:macro name="box_inertia" params="m w h d">
+      <inertial>
+        <origin xyz="0 0 0" rpy="${pi/2} 0 ${pi/2}"/>
+        <mass value="${m}"/>
+        <inertia ixx="${(m/12) * (h*h + d*d)}" ixy="0.0" ixz="0.0" iyy="${(m/12) * (w*w + d*d)}" iyz="0.0" izz="${(m/12) * (w*w + h*h)}"/>
+      </inertial>
+    </xacro:macro>
+
+    <xacro:macro name="cylinder_inertia" params="m r h">
+      <inertial>
+        <origin xyz="0 0 0" rpy="${pi/2} 0 0" />
+        <mass value="${m}"/>
+        <inertia ixx="${(m/12) * (3*r*r + h*h)}" ixy = "0" ixz = "0" iyy="${(m/12) * (3*r*r + h*h)}" iyz = "0" izz="${(m/2) * (r*r)}"/>
+      </inertial>
+    </xacro:macro>
+
+    <xacro:macro name="sphere_inertia" params="m r">
+      <inertial>
+        <mass value="${m}"/>
+        <inertia ixx="${(2/5) * m * (r*r)}" ixy="0.0" ixz="0.0" iyy="${(2/5) * m * (r*r)}" iyz="0.0" izz="${(2/5) * m * (r*r)}"/>
+      </inertial>
+    </xacro:macro>
+
+    <gazebo>
+        <plugin filename="gz-sim-joint-state-publisher-system"
+        name="gz::sim::systems::JointStatePublisher">
+          <topic>joint_states</topic>
+          <update>20</update>
+          <gz_frame_id>base_link</gz_frame_id>
+          <frame_id>base_link</frame_id>
+          <joint_name>front_left_wheel_joint</joint_name>
+          <joint_name>front_right_wheel_joint</joint_name>
+          <joint_name>rear_left_wheel_joint</joint_name>
+          <joint_name>rear_right_wheel_joint</joint_name>
+        </plugin>
+    </gazebo>
 
     <!-- Base Link -->
     <link name="${prefix}base_link">
-      <collision>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <geometry>
-          <box size="${base_width} ${base_length} ${base_height}"/>
-        </geometry>
-      </collision>
       <visual>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
-          <box size="${base_width} ${base_length} ${base_height}"/>
+          <box size="${base_length} ${base_width} ${base_height}"/>
         </geometry>
         <material name="orange"/>
       </visual>
-      <inertial>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <mass value="${base_mass}"/>
-        <inertia
-                ixx="${base_mass / 12.0 * (base_length*base_length + base_height*base_height)}" ixy="0.0" ixz="0.0"
-                iyy="${base_mass / 12.0 * (base_height*base_height + base_width*base_width)}" iyz="0.0"
-                izz="${base_mass / 12.0 * (base_width*base_width + base_length*base_length)}"/>
-      </inertial>
-    </link>
-    <!-- left wheel Link -->
-    <link name="${prefix}rear_left_wheel">
+
       <collision>
-        <origin xyz="0 0 0" rpy="${PI/2} 0 ${PI/2}"/>
         <geometry>
-          <cylinder length="${wheel_len}" radius="${wheel_radius}"/>
+          <box size="${base_length} ${base_width} ${base_height}"/>
         </geometry>
       </collision>
-      <visual>
-        <origin xyz="0 0 0" rpy="${PI/2} 0 ${PI/2}"/>
-        <geometry>
-          <cylinder length="${wheel_len}" radius="${wheel_radius}"/>
-        </geometry>
-        <material name="black"/>
-      </visual>
-      <inertial>
-        <origin xyz="0 0 0" rpy="${PI/2} 0 ${PI/2}"/>
-        <mass value="${wheel_mass}"/>
-        <inertia
-                ixx="${wheel_mass / 12.0 * (3*wheel_radius*wheel_radius + wheel_len*wheel_len)}" ixy="0.0" ixz="0.0"
-                iyy="${wheel_mass / 12.0 * (3*wheel_radius*wheel_radius + wheel_len*wheel_len)}" iyz="0.0"
-                izz="${wheel_mass / 2.0 * wheel_radius*wheel_radius}"/>
-      </inertial>
-    </link>
-    <!-- right wheel Link -->
-    <link name="${prefix}rear_right_wheel">
-      <collision>
-        <origin xyz="0 0 0" rpy="${PI/2} 0 ${PI/2}"/>
-        <geometry>
-          <cylinder length="${wheel_len}" radius="${wheel_radius}"/>
-        </geometry>
-      </collision>
-      <visual>
-        <origin xyz="0 0 0" rpy="${PI/2} 0 ${PI/2}"/>
-        <geometry>
-          <cylinder length="${wheel_len}" radius="${wheel_radius}"/>
-        </geometry>
-        <material name="black"/>
-      </visual>
-      <inertial>
-        <origin xyz="0 0 0" rpy="${PI/2} 0 ${PI/2}"/>
-        <mass value="${wheel_mass}"/>
-        <inertia
-          ixx="${wheel_mass / 12.0 * (3*wheel_radius*wheel_radius + wheel_len*wheel_len)}" ixy="0.0" ixz="0.0"
-          iyy="${wheel_mass / 12.0 * (3*wheel_radius*wheel_radius + wheel_len*wheel_len)}" iyz="0.0"
-          izz="${wheel_mass / 2.0 * wheel_radius*wheel_radius}"/>
-      </inertial>
-    </link>
-    <!-- caster frontal wheel Link -->
-    <link name="${prefix}front_left_wheel">
-      <collision>
-        <origin xyz="0 0 0" rpy="${PI/2} 0 ${PI/2}"/>
-        <geometry>
-          <cylinder length="${wheel_len}" radius="${wheel_radius}"/>
-        </geometry>
-      </collision>
-      <visual>
-        <origin xyz="0 0 0" rpy="${PI/2} 0 ${PI/2}"/>
-        <geometry>
-          <cylinder length="${wheel_len}" radius="${wheel_radius}"/>
-        </geometry>
-        <material name="black"/>
-      </visual>
-      <inertial>
-        <origin xyz="0 0 0" rpy="${PI/2} 0 ${PI/2}"/>
-        <mass value="${wheel_mass}"/>
-        <inertia
-          ixx="${wheel_mass * 0.4 * (wheel_radius * wheel_radius)}" ixy="0.0" ixz="0.0"
-          iyy="${wheel_mass * 0.4 * (wheel_radius * wheel_radius)}" iyz="0.0"
-          izz="${wheel_mass * 0.4 * (wheel_radius * wheel_radius)}"/>
-      </inertial>
-    </link>
-    <!-- caster rear wheel Link -->
-    <link name="${prefix}front_right_wheel">
-      <collision>
-        <origin xyz="0 0 0" rpy="${PI/2} 0 ${PI/2}"/>
-        <geometry>
-          <cylinder length="${wheel_len}" radius="${wheel_radius}"/>
-        </geometry>
-      </collision>
-      <visual>
-        <origin xyz="0 0 0" rpy="${PI/2} 0 ${PI/2}"/>
-        <geometry>
-          <cylinder length="${wheel_len}" radius="${wheel_radius}"/>
-        </geometry>
-        <material name="black"/>
-      </visual>
-      <inertial>
-        <origin xyz="0 0 0" rpy="${PI/2} 0 ${PI/2}"/>
-        <mass value="${wheel_mass}"/>
-        <inertia
-          ixx="${wheel_mass * 0.4 * (wheel_radius * wheel_radius)}" ixy="0.0" ixz="0.0"
-          iyy="${wheel_mass * 0.4 * (wheel_radius * wheel_radius)}" iyz="0.0"
-          izz="${wheel_mass * 0.4 * (wheel_radius * wheel_radius)}"/>
-      </inertial>
+
+      <xacro:box_inertia m="15" w="${base_width}" d="${base_length}" h="${base_height}"/>
     </link>
 
-    <!-- rear left wheel Link -->
-    <joint name="${prefix}rear_left_wheel_joint" type="continuous">
-      <parent link="${prefix}base_link"/>
-      <child link="${prefix}rear_left_wheel"/>
-      <origin xyz="${base_width/2} ${-y_offset} ${z_offset}" rpy="0 0 0"/>
-      <axis xyz="1 0 0"/>
-      <dynamics damping="0.2"/>
-      <limit effort="100" velocity="1.0"/>
+    <link name="${prefix}base_footprint" />
+    <gazebo reference="${prefix}base_footprint">
+        <turnGravityOff>false</turnGravityOff>
+    </gazebo>
+
+    <joint name="${prefix}base_joint" type="fixed">
+      <parent link="base_footprint" />
+      <child link="base_link" />
+      <origin xyz="0.0 0.0 ${(wheel_radius+wheel_zoff)}" rpy="0 0 0" />
     </joint>
-    <!-- rear right wheel Link -->
-    <joint name="${prefix}rear_right_wheel_joint" type="continuous">
-      <parent link="${prefix}base_link"/>
-      <child link="${prefix}rear_right_wheel"/>
-      <origin xyz="${-base_width/2} ${-y_offset} ${z_offset}" rpy="0 0 0"/>
-      <axis xyz="0 1 0"/>
-      <dynamics damping="0.2"/>
-      <limit effort="100" velocity="1.0"/>
+
+    <xacro:macro name="wheel" params="prefix x_reflect y_reflect">
+      <link name="${prefix}_link">
+        <inertial>
+          <origin xyz="0 0 0" rpy="0 0 0"/>
+          <mass value="0.125"/>
+          <inertia ixx="0.001"  ixy="0"  ixz="0" iyy="0.001" iyz="0" izz="0.001" />
+        </inertial>
+
+        <collision>
+          <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+          <geometry>
+            <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+          </geometry>
+        </collision>
+
+        <visual>
+          <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+          <geometry>
+            <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+          </geometry>
+          <material name="black" />
+        </visual>
+      </link>
+
+      <joint name="${prefix}_joint" type="continuous">
+        <parent link="base_link" />
+        <child link="${prefix}_link" />
+        <origin xyz="${x_reflect*wheel_xoff} ${y_reflect * (base_width/2 + wheel_ygap)} ${-wheel_zoff}" rpy="0 0 0" />
+        <axis xyz="0 1 0" />
+      </joint>
+
+      <xacro:cylinder_inertia m="0.5" r="${wheel_radius}" h="${wheel_width}"/>
+    </xacro:macro>
+
+    <xacro:wheel prefix="front_left_wheel" x_reflect="1" y_reflect="1" />
+    <xacro:wheel prefix="front_right_wheel" x_reflect="1" y_reflect="-1" />
+    <xacro:wheel prefix="rear_left_wheel" x_reflect="-1" y_reflect="1" />
+    <xacro:wheel prefix="rear_right_wheel" x_reflect="-1" y_reflect="-1" />
+
+    <link name="lidar_mount_link">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="0.125"/>
+        <inertia ixx="0.001"  ixy="0"  ixz="0" iyy="0.001" iyz="0" izz="0.001" />
+      </inertial>
+
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+            <box size="0.02 0.02 ${lidar_mount_height}"/>
+        </geometry>
+      </collision>
+
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+            <box size="0.02 0.02 ${lidar_mount_height}"/>
+        </geometry>
+      </visual>
+    </link>
+
+    <joint name="lidar_mount_joint" type="fixed">
+        <parent link="base_link"/>
+        <child link="lidar_mount_link"/>
+        <origin xyz="${lidar_mount_xoff} 0 ${(base_height + lidar_mount_height)/2}" rpy="0 0 0"/>
     </joint>
-    <!-- front left wheel Link -->
-    <joint name="${prefix}front_left_wheel_joint" type="continuous">
-      <parent link="${prefix}base_link"/>
-      <child link="${prefix}front_left_wheel"/>
-      <origin xyz="${base_width/2} ${y_offset} ${z_offset}" rpy="0 0 0"/>
-      <axis xyz="0 1 0"/>
-      <dynamics damping="0.2"/>
-      <limit effort="100" velocity="1.0"/>
+
+    <link name="lidar_link">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="0.125"/>
+        <inertia ixx="0.001"  ixy="0"  ixz="0" iyy="0.001" iyz="0" izz="0.001" />
+      </inertial>
+
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+            <cylinder radius="${lidar_radius}" length="${lidar_height}"/>
+        </geometry>
+      </collision>
+
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+            <cylinder radius="${lidar_radius}" length="${lidar_height}"/>
+        </geometry>
+      </visual>
+    </link>
+
+    <joint name="lidar_joint" type="fixed">
+        <parent link="lidar_mount_link"/>
+        <child link="lidar_link"/>
+        <origin xyz="0 0 ${(lidar_mount_height + lidar_height) / 2}" rpy="0 0 0"/>
     </joint>
-    <!-- front right wheel Link -->
-    <joint name="${prefix}front_right_wheel_joint" type="continuous">
-      <parent link="${prefix}base_link"/>
-      <child link="${prefix}front_right_wheel"/>
-      <origin xyz="${-base_width/2} ${y_offset} ${z_offset}" rpy="0 0 0"/>
-      <axis xyz="0 1 0"/>
-      <dynamics damping="0.2"/>
-      <limit effort="100" velocity="1.0"/>
+
+    <gazebo reference="lidar_link">
+        <sensor name="lidar" type="gpu_lidar">
+            <always_on>true</always_on>
+            <visualize>true</visualize>
+            <update_rate>1</update_rate>
+            <topic>scan</topic>
+            <gz_frame_id>lidar_link</gz_frame_id>
+            <pose>${lidar_mount_xoff} 0 ${lidar_mount_height + (base_height + lidar_height) / 2} 0 0 0</pose>
+            <lidar>
+                <scan>
+                    <horizontal>
+                        <samples>360</samples>
+                        <resolution>1.0</resolution>
+                        <min_angle>0.00</min_angle>
+                        <max_angle>6.28</max_angle>
+                    </horizontal>
+                </scan>
+                <range>
+                    <min>0.12</min>
+                    <max>5.0</max>
+                    <resolution>0.015</resolution>
+                </range>
+                <noise>
+                    <type>gaussian</type>
+                    <mean>0.0</mean>
+                    <stddev>0.01</stddev>
+                </noise>
+            </lidar>
+        </sensor>
+    </gazebo>
+
+    <link name="imu_link">
+      <xacro:box_inertia m="0.01" w="0.01" d="0.01" h="0.001" />
+
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.01 0.01 0.001"/>
+        </geometry>
+      </collision>
+
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.01 0.01 0.001"/>
+        </geometry>
+      </visual>
+    </link>
+
+    <joint name="imu_joint" type="fixed">
+      <parent link="base_link"/>
+      <child link="imu_link"/>
+      <origin xyz="0 0 0.0"/> <!-- TODO: update correct value -->
     </joint>
+
+    <gazebo reference="imu_link">
+      <sensor name="imu_sensor" type="imu">
+        <always_on>true</always_on>
+        <visualize>true</visualize>
+        <update_rate>100</update_rate>
+        <gz_frame_id>imu_link</gz_frame_id>
+        <topic>imu</topic>
+      </sensor>
+    </gazebo>
+
+    <link name="camera_link">
+      <xacro:box_inertia m="0.01" w="0.01" d="0.01" h="0.001" />
+
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.01 0.01 0.001"/>
+        </geometry>
+      </collision>
+
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.01 0.01 0.001"/>
+        </geometry>
+      </visual>
+    </link>
+
+    <joint name="camera_joint" type="fixed">
+      <parent link="base_link"/>
+      <child link="camera_link"/>
+      <origin xyz="0.11 0 0.015"/>
+    </joint>
+
+    <gazebo reference="camera_link">
+      <sensor name="camera" type="camera">
+        <always_on>true</always_on>
+        <visualize>true</visualize>
+        <update_rate>30</update_rate>
+        <gz_frame_id>camera_link</gz_frame_id>
+        <topic>camera</topic>
+        <camera name="rpcam">
+          <camera_info_topic>camera/camera_info</camera_info_topic>
+          <horizontal_fov>1.089</horizontal_fov>
+          <image>
+              <width>640</width>
+              <height>480</height>
+              <format>R8G8B8</format>
+          </image>
+          <clip>
+              <near>0.1</near>
+              <far>100</far>
+          </clip>
+          <noise>
+              <type>gaussian</type>
+              <mean>0.0</mean>
+              <stddev>0.007</stddev>
+          </noise>
+        </camera>
+      </sensor>
+    </gazebo>
   </xacro:macro>
 </robot>

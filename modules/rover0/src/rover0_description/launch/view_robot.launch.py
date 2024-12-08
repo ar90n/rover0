@@ -1,21 +1,23 @@
-from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
-from launch.conditions import IfCondition
-from launch.substitutions import Command, FindExecutable, LaunchConfiguration, PathJoinSubstitution
+from ament_index_python.packages import get_package_share_directory
 
+from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument, ExecuteProcess, IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.conditions import IfCondition, UnlessCondition
+from launch.substitutions import Command, FindExecutable, LaunchConfiguration, PathJoinSubstitution
+from launch_ros.descriptions import ParameterValue
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
+from ros_gz_sim.actions import GzServer
 
 def generate_launch_description():
+    world_file_path = PathJoinSubstitution([
+        FindPackageShare('rover0_description'),
+        'world',
+        'my_world.sdf'
+    ])
+
     declared_arguments = []
-    declared_arguments.append(
-        DeclareLaunchArgument(
-            "gui",
-            default_value="true",
-            description="Start Rviz2 and Joint State Publisher gui automatically \
-        with this launch file.",
-        )
-    )
     declared_arguments.append(
         DeclareLaunchArgument(
             'prefix',
@@ -23,9 +25,16 @@ def generate_launch_description():
             description='Prefix to be added to the robot description'
         )
     )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            'world_sdf_file',
+            default_value=world_file_path,
+            description='Path to the SDF world file'
+        )
+    )
 
-    gui = LaunchConfiguration("gui")
     prefix = LaunchConfiguration('prefix')
+    world_sdf_file = LaunchConfiguration('world_sdf_file')
 
     # Convert the URDF/XACRO file to URDF
     robot_description_content = Command(
@@ -40,17 +49,15 @@ def generate_launch_description():
             prefix,
         ]
     )
-    robot_description = {"robot_description": robot_description_content}
+    robot_description = {"robot_description": ParameterValue(robot_description_content, value_type=str)}
 
     rviz_config_file = PathJoinSubstitution(
         [FindPackageShare("rover0_description"), "rviz", "rover0.rviz"]
     )
-
-    joint_state_publisher_node = Node(
-        package="joint_state_publisher_gui",
-        executable="joint_state_publisher_gui",
-        condition=IfCondition(gui),
+    ros_gz_bridge_config_file = PathJoinSubstitution(
+        [FindPackageShare("rover0_description"), "gazebo", "rover0_bridge.yaml"]
     )
+
     robot_state_publisher_node = Node(
         package="robot_state_publisher",
         executable="robot_state_publisher",
@@ -63,13 +70,38 @@ def generate_launch_description():
         name='rviz2',
         output='both',
         arguments=['-d', rviz_config_file],
-        condition=IfCondition(gui),
+    )
+    gazebo = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([
+            FindPackageShare('ros_gz_sim').find('ros_gz_sim'),
+            '/launch/gz_sim.launch.py'
+        ]),
+        launch_arguments={'gz_args': ['-r ', world_sdf_file],  'on_exit_shutdown': 'true'}.items()
+    )
+    spawn_entity = Node(
+      package='ros_gz_sim',
+      executable='create',
+      arguments=[
+          '-topic', '/robot_description',
+          '-name', 'rover0',
+          "-z", '0.01',
+      ],
+      output='screen'
+    )
+    ros_gz_bridge_node = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        parameters=[{
+            'config_file': ros_gz_bridge_config_file
+        }],
+        output='screen'
     )
 
     nodes = [
-        joint_state_publisher_node,
         robot_state_publisher_node,
-        rviz_node
+        rviz_node,
+        ros_gz_bridge_node,
+        gazebo,
+        spawn_entity,
     ]
-
     return LaunchDescription(declared_arguments + nodes)
