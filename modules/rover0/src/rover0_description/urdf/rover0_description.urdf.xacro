@@ -90,11 +90,7 @@
 
     <xacro:macro name="wheel" params="prefix x_reflect y_reflect">
       <link name="${prefix}_link">
-        <inertial>
-          <origin xyz="0 0 0" rpy="0 0 0"/>
-          <mass value="0.125"/>
-          <inertia ixx="0.001"  ixy="0"  ixz="0" iyy="0.001" iyz="0" izz="0.001" />
-        </inertial>
+        <xacro:cylinder_inertia m="0.5" r="${wheel_radius}" h="${wheel_width}"/>
 
         <collision>
           <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
@@ -118,8 +114,6 @@
         <origin xyz="${x_reflect*wheel_xoff} ${y_reflect * (base_width/2 + wheel_ygap)} ${-wheel_zoff}" rpy="0 0 0" />
         <axis xyz="0 1 0" />
       </joint>
-
-      <xacro:cylinder_inertia m="0.5" r="${wheel_radius}" h="${wheel_width}"/>
     </xacro:macro>
 
     <xacro:wheel prefix="front_left_wheel" x_reflect="1" y_reflect="1" />
@@ -298,6 +292,24 @@
           </noise>
         </camera>
       </sensor>
+    </gazebo>
+    <gazebo>
+        <plugin
+            filename="gz-sim-velocity-control-system"
+            name="gz::sim::systems::VelocityControl">
+            <topic>mecanum_drive_controller/cmd_vel</topic>
+            <initial_linear>0 0 0</initial_linear>
+            <initial_angular>0 0 0</initial_angular>
+        </plugin>
+    </gazebo>
+
+    <gazebo>
+        <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+            <parameters>$(find rover0_bringup)/config/rover0_controllers.yaml</parameters>
+            <ros>
+                <remapping>/controller_manager/robot_description:=/robot_description</remapping>
+            </ros>
+        </plugin>
     </gazebo>
   </xacro:macro>
 </robot>

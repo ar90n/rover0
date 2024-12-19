@@ -5,6 +5,9 @@
 
     <ros2_control name="${name}" type="system">
       <hardware>
+        <xacro:if value="true">
+            <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+        </xacro:if>
         <plugin>rover0_hardware_interface/Rover0HardwareInterface</plugin>
         <param name="front_left_wheel_joint_name">front_left_wheel_joint</param>
         <param name="front_right_wheel_joint_name">front_right_wheel_joint</param>
