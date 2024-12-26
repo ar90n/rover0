@@ -8,7 +8,9 @@
         <xacro:if value="true">
             <plugin>gz_ros2_control/GazeboSimSystem</plugin>
         </xacro:if>
-        <plugin>rover0_hardware_interface/Rover0HardwareInterface</plugin>
+        <xacro:if value="false">
+            <plugin>rover0_hardware_interface/Rover0HardwareInterface</plugin>
+        </xacro:if>
         <param name="front_left_wheel_joint_name">front_left_wheel_joint</param>
         <param name="front_right_wheel_joint_name">front_right_wheel_joint</param>
         <param name="rear_left_wheel_joint_name">rear_left_wheel_joint</param>
