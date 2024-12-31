@@ -1,0 +1,66 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+    <xacro:include filename="$(find rover0_description)/urdf/rover0_description_common.urdf.xacro" />
+
+    <xacro:property name="mount_height" value="0.092" />
+    <xacro:property name="lidar_height" value="0.032" />
+    <xacro:property name="lidar_radius" value="0.034" />
+
+    <xacro:macro name="lidar" params="prefix parent x_off">
+        <link name="${prefix}_lidar_mount_link">
+          <inertial>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <mass value="0.125"/>
+            <inertia ixx="0.001"  ixy="0"  ixz="0" iyy="0.001" iyz="0" izz="0.001" />
+          </inertial>
+
+          <collision>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <box size="0.02 0.02 ${mount_height}"/>
+            </geometry>
+          </collision>
+
+          <visual>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <box size="0.02 0.02 ${mount_height}"/>
+            </geometry>
+          </visual>
+        </link>
+
+        <link name="${prefix}_lidar_link">
+          <inertial>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <mass value="0.125"/>
+            <inertia ixx="0.001"  ixy="0"  ixz="0" iyy="0.001" iyz="0" izz="0.001" />
+          </inertial>
+
+          <collision>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <cylinder radius="${lidar_radius}" length="${lidar_height}"/>
+            </geometry>
+          </collision>
+
+          <visual>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <cylinder radius="${lidar_radius}" length="${lidar_height}"/>
+            </geometry>
+          </visual>
+        </link>
+
+        <joint name="${prefix}_lidar_mount_joint" type="fixed">
+            <parent link="${parent}"/>
+            <child link="${prefix}_lidar_mount_link"/>
+            <origin xyz="${x_off} 0 ${(base_height + mount_height)/2}" rpy="0 0 0"/>
+        </joint>
+
+        <joint name="${prefix}_lidar_joint" type="fixed">
+            <parent link="${prefix}_lidar_mount_link"/>
+            <child link="${prefix}_lidar_link"/>
+            <origin xyz="0 0 ${(mount_height + lidar_height) / 2}" rpy="0 0 0"/>
+        </joint>
+    </xacro:macro>
+</robot>

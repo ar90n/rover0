@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+    <xacro:include filename="$(find rover0_description)/urdf/rover0_description_common.urdf.xacro" />
+
+    <xacro:macro name="imu" params="prefix parent x_off y_off z_off">
+        <link name="${prefix}_imu_link">
+          <xacro:box_inertia m="0.01" w="0.01" d="0.01" h="0.001" />
+
+          <collision>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+              <box size="0.01 0.01 0.001"/>
+            </geometry>
+          </collision>
+
+          <visual>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+              <box size="0.01 0.01 0.001"/>
+            </geometry>
+          </visual>
+        </link>
+
+        <joint name="${prefix}_imu_joint" type="fixed">
+          <parent link="${parent}"/>
+          <child link="${prefix}_imu_link"/>
+          <origin xyz="${x_off} ${y_off} ${z_off}"/> <!-- TODO: update correct value -->
+        </joint>
+    </xacro:macro>
+</robot>

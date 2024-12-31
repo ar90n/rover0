@@ -1,29 +1,14 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
-
   <xacro:macro name="rover0_ros2_control" params="name prefix">
-
     <ros2_control name="${name}" type="system">
       <hardware>
-        <xacro:if value="true">
-            <plugin>gz_ros2_control/GazeboSimSystem</plugin>
-        </xacro:if>
-        <xacro:if value="false">
-            <plugin>rover0_hardware_interface/Rover0HardwareInterface</plugin>
-        </xacro:if>
+        <xacro:insert_block name="hardware_system"/>
         <param name="front_left_wheel_joint_name">front_left_wheel_joint</param>
         <param name="front_right_wheel_joint_name">front_right_wheel_joint</param>
         <param name="rear_left_wheel_joint_name">rear_left_wheel_joint</param>
         <param name="rear_right_wheel_joint_name">rear_right_wheel_joint</param>
         <param name="imu_sensor_name">imu_sensor</param>
-        <param name="serial_port">/dev/ttyUSB0</param>
-        <param name="encoder_tics_per_revolution">64</param>
-        <param name="imu_linear_acceleration_offset_x">-0.04001879692077637</param>
-        <param name="imu_linear_acceleration_offset_y">-0.011276155710220337</param>
-        <param name="imu_linear_acceleration_offset_z">0.9002845287322998</param>
-        <param name="imu_angular_velocity_offset_x">-6.8362923339009285</param>
-        <param name="imu_angular_velocity_offset_y">0.2556564286351204</param>
-        <param name="imu_angular_velocity_offset_z">0.06320327520370483</param>
       </hardware>
 
       <joint name="${prefix}front_left_wheel_joint">
@@ -55,7 +40,5 @@
         <state_interface name="position"/>
       </joint>
     </ros2_control>
-
   </xacro:macro>
-
 </robot>
