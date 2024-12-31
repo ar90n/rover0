@@ -1,12 +1,12 @@
 <?xml version="1.0"?>
-<robot xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
     <xacro:include filename="$(find rover0_description)/urdf/rover0_description_common.urdf.xacro" />
 
     <xacro:property name="mount_height" value="0.092" />
     <xacro:property name="lidar_height" value="0.032" />
     <xacro:property name="lidar_radius" value="0.034" />
 
-    <xacro:macro name="lidar" params="prefix parent x_off">
+    <xacro:macro name="lidar" params="prefix parent base_height x_off">
         <link name="${prefix}_lidar_mount_link">
           <inertial>
             <origin xyz="0 0 0" rpy="0 0 0"/>

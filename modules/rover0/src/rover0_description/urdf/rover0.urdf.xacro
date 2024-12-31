@@ -2,34 +2,8 @@
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="rover0">
   <xacro:arg name="prefix" default="" />
 
-  <!-- Import Rover0 macro -->
+  <xacro:include filename="$(find rover0_description)/urdf/rover0.materials.xacro" />
   <xacro:include filename="$(find rover0_description)/urdf/rover0_description.urdf.xacro" />
 
-  <!-- Import Rviz colors -->
-  <xacro:include filename="$(find rover0_description)/urdf/rover0.materials.xacro" />
-
-  <!-- Import Rover0 ros2_control description -->
-  <xacro:include filename="$(find rover0_description)/ros2_control/rover0.ros2_control.xacro" />
-
-  <!-- xacro:rover0 prefix="$(arg prefix)" /-->
   <xacro:call macro="rover0" prefix="$(arg prefix)" />
-
-  <xacro:rover0_ros2_control name="Rover0" prefix="$(arg prefix)">
-    <xacro:property name="hardware_system">
-      <xacro:if value="false">
-          <plugin>gz_ros2_control/GazeboSimSystem</plugin>
-      </xacro:if>
-      <xacro:if value="true">
-          <plugin>rover0_hardware_interface/Rover0HardwareInterface</plugin>
-          <param name="serial_port">/dev/ttyUSB0</param>
-          <param name="encoder_tics_per_revolution">64</param>
-          <param name="imu_linear_acceleration_offset_x">-0.04001879692077637</param>
-          <param name="imu_linear_acceleration_offset_y">-0.011276155710220337</param>
-          <param name="imu_linear_acceleration_offset_z">0.9002845287322998</param>
-          <param name="imu_angular_velocity_offset_x">-6.8362923339009285</param>
-          <param name="imu_angular_velocity_offset_y">0.2556564286351204</param>
-          <param name="imu_angular_velocity_offset_z">0.06320327520370483</param>
-      </xacro:if>
-    </xacro:property>
-  </xacro:rover0_ros2_control>
 </robot>

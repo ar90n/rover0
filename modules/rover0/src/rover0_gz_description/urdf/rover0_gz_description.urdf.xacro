@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+    <xacro:include filename="$(find rover0_gz_description)/urdf/rover0_gz_description_imu.urdf.xacro" />
+    <xacro:include filename="$(find rover0_gz_description)/urdf/rover0_gz_description_camera.urdf.xacro" />
+    <xacro:include filename="$(find rover0_gz_description)/urdf/rover0_gz_description_wheel.urdf.xacro" />
+    <xacro:include filename="$(find rover0_gz_description)/urdf/rover0_gz_description_lidar.urdf.xacro" />
+
+    <xacro:macro name="gz_rover0" params="prefix">
+        <gazebo>
+            <turnGravityOff>false</turnGravityOff>
+            <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+                <parameters>$(find rover0_bringup)/config/rover0_controllers.yaml</parameters>
+                <ros>
+                    <remapping>/controller_manager/robot_description:=/robot_description</remapping>
+                </ros>
+            </plugin>
+            <plugin filename="gz-sim-joint-state-publisher-system" name="gz::sim::systems::JointStatePublisher">
+              <topic>joint_states</topic>
+              <update>20</update>
+              <gz_frame_id>base_link</gz_frame_id>
+              <frame_id>base_link</frame_id>
+              <joint_name>front_left_wheel_joint</joint_name>
+              <joint_name>front_right_wheel_joint</joint_name>
+              <joint_name>rear_left_wheel_joint</joint_name>
+              <joint_name>rear_right_wheel_joint</joint_name>
+            </plugin>
+        </gazebo>
+
+        <xacro:gz_imu reference="rover0_imu_link" frame_id="rover0_imu_link" topic="imu"/>
+        <xacro:gz_camera reference="rover0_camera_link" frame_id="rover0_camera_link" topic="camera"/>
+        <xacro:gz_lidar reference="rover0_lidar_link" frame_id="rover0_lidar_link" topic="scan" base_height="${base_height}" x_off="${lidar_x_off}"/>
+        <xacro:gz_wheel reference="front_left_wheel_link" x_reflect="1" y_reflect="1" />
+        <xacro:gz_wheel reference="front_right_wheel_link" x_reflect="1" y_reflect="-1" />
+        <xacro:gz_wheel reference="rear_left_wheel_link" x_reflect="-1" y_reflect="1" />
+        <xacro:gz_wheel reference="rear_right_wheel_link" x_reflect="-1" y_reflect="-1" />
+    </xacro:macro>
+</robot>
