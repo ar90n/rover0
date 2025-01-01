@@ -21,6 +21,8 @@ from nav2_common.launch import RewrittenYaml
 def generate_launch_description():
     bringup_dir = get_package_share_directory('nav2_bringup')
     bringup_dir2 = get_package_share_directory('nav2_minimal_tb3_sim')
+    bringup_dir3 = get_package_share_directory('robot_localization')
+    bringup_dir4 = get_package_share_directory('rover0_bringup')
     sim_dir = get_package_share_directory('nav2_minimal_tb3_sim')
 
     declared_arguments = [
@@ -54,7 +56,12 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'nav2_params_file',
             default_value=os.path.join(bringup_dir, 'params', 'nav2_params.yaml'),
-            description='Full path to the ROS2 parameters file to use for all launched nodes',
+            description='Full path to the ROS2 parameters for navigation2',
+        ),
+        DeclareLaunchArgument(
+            'ekf_params_file',
+            default_value=os.path.join(bringup_dir4, 'config', 'ekf.yaml'),
+            description='Full path to the ROS2 parameters for ekf',
         ),
         DeclareLaunchArgument(
             'log_level', default_value='info', description='log level'
@@ -68,6 +75,7 @@ def generate_launch_description():
     use_rviz = LaunchConfiguration('use_rviz')
     headless = LaunchConfiguration('headless')
     nav2_params_file = LaunchConfiguration('nav2_params_file')
+    ekf_params_file = LaunchConfiguration('ekf_params_file')
     log_level = LaunchConfiguration('log_level')
     pose = {'x': LaunchConfiguration('x_pose', default='-2.00'),
             'y': LaunchConfiguration('y_pose', default='-0.50'),
@@ -125,6 +133,7 @@ def generate_launch_description():
         parameters=[{
             "use_mag": False,
             "gain": 0.1,
+            "publish_tf": False
         }],
         remappings=[
             ('/imu/data_raw', '/imu_sensor_broadcaster/imu'),
@@ -208,6 +217,22 @@ def generate_launch_description():
           '-R', pose['R'], '-P', pose['P'], '-Y', pose['Y']
       ],
       output='screen'
+    )
+
+    ekf_configured_params = ParameterFile(
+        RewrittenYaml(
+            source_file=ekf_params_file,
+            param_rewrites={},
+            convert_types=True,
+        ),
+        allow_substs=True,
+    )
+    ekf_node = Node(
+        package='robot_localization',
+        executable='ekf_node',
+        name='ekf_filter_node',
+        output='screen',
+        parameters=[ekf_configured_params]
     )
 
     nav2_configured_params = ParameterFile(
@@ -304,7 +329,8 @@ def generate_launch_description():
         remove_temp_sdf_file,
         ros_gz_bridge_node,
         spawn_entity_node,
-        nav2_composable_nodes
+        nav2_composable_nodes,
+        ekf_node
     ]
 
     return LaunchDescription(declared_arguments + nodes)
