@@ -9,7 +9,6 @@
 
   <buildtool_depend>ament_cmake_auto</buildtool_depend>
 
-  <exec_depend>rover0_description</exec_depend>
   <exec_depend>xacro</exec_depend>
 
   <export>

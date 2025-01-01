@@ -9,8 +9,6 @@
 
   <buildtool_depend>ament_cmake_auto</buildtool_depend>
 
-  <exec_depend>rover0_robot_description</exec_depend>
-  <exec_depend>rover0_gz_description</exec_depend>
   <exec_depend>robot_state_publisher</exec_depend>
   <exec_depend>ros2_control</exec_depend>
   <exec_depend>controller_manager</exec_depend>

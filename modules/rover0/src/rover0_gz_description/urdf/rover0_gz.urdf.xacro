@@ -8,6 +8,7 @@
   <xacro:include filename="$(find rover0_gz_description)/urdf/rover0_gz_description.urdf.xacro" />
 
   <xacro:rover0 prefix="$(arg prefix)" />
+  <xacro:gz_rover0 prefix="$(arg prefix)" />
 
   <xacro:rover0_ros2_control name="Rover0" prefix="$(arg prefix)">
     <xacro:property name="hardware_system">
@@ -15,5 +16,4 @@
     </xacro:property>
   </xacro:rover0_ros2_control>
 
-  <xacro:gz_rover0 prefix="$(arg prefix)" />
 </robot>

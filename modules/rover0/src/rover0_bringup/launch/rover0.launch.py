@@ -4,17 +4,19 @@ from pathlib import Path
 
 from ament_index_python.packages import get_package_share_directory
 
-from launch.actions import AppendEnvironmentVariable
+from launch.actions import AppendEnvironmentVariable, GroupAction
 from launch import LaunchDescription, LaunchDescriptionEntity, condition
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, ExecuteProcess, RegisterEventHandler, OpaqueFunction
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.descriptions import ParameterValue
-from launch_ros.actions import Node
-from launch.substitutions import Command, FindExecutable, PathJoinSubstitution, LaunchConfiguration, IfElseSubstitution, PythonExpression
+from launch_ros.actions import Node, LoadComposableNodes
+from launch.substitutions import Command, FindExecutable, PathJoinSubstitution, LaunchConfiguration, IfElseSubstitution, PythonExpression, EqualsSubstitution, NotEqualsSubstitution
 from launch_ros.substitutions import FindPackageShare
 from launch.conditions import IfCondition, UnlessCondition
+from launch_ros.descriptions import ComposableNode, ParameterFile
 from launch_ros.substitutions.find_package import FindPackage
 from launch.event_handlers import OnShutdown
+from nav2_common.launch import RewrittenYaml
 
 def generate_launch_description():
     bringup_dir = get_package_share_directory('nav2_bringup')
@@ -48,6 +50,14 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'headless', default_value='False', description='Whether to execute gzclient)'
+        ),
+        DeclareLaunchArgument(
+            'nav2_params_file',
+            default_value=os.path.join(bringup_dir, 'params', 'nav2_params.yaml'),
+            description='Full path to the ROS2 parameters file to use for all launched nodes',
+        ),
+        DeclareLaunchArgument(
+            'log_level', default_value='info', description='log level'
         )
     ]
 
@@ -57,6 +67,8 @@ def generate_launch_description():
     use_sim = LaunchConfiguration('use_sim')
     use_rviz = LaunchConfiguration('use_rviz')
     headless = LaunchConfiguration('headless')
+    nav2_params_file = LaunchConfiguration('nav2_params_file')
+    log_level = LaunchConfiguration('log_level')
     pose = {'x': LaunchConfiguration('x_pose', default='-2.00'),
             'y': LaunchConfiguration('y_pose', default='-0.50'),
             'z': LaunchConfiguration('z_pose', default='0.01'),
@@ -133,7 +145,6 @@ def generate_launch_description():
         arguments=["-d", rviz_config_file],
     )
 
-
     robot_controllers = PathJoinSubstitution(
         [
             FindPackageShare("rover0_bringup"), "config", "rover0_controllers.yaml"
@@ -199,6 +210,78 @@ def generate_launch_description():
       output='screen'
     )
 
+    nav2_configured_params = ParameterFile(
+        RewrittenYaml(
+            source_file=nav2_params_file,
+            param_rewrites={},
+            convert_types=True,
+        ),
+        allow_substs=True,
+    )
+    nav2_composable_nodes = GroupAction(
+        actions=[
+            #SetParameter('use_sim_time', use_sim_time),
+            Node(
+                name='nav2_container',
+                package='rclcpp_components',
+                executable='component_container_isolated',
+                parameters=[nav2_configured_params, {'autostart': 'true'}],
+                arguments=['--ros-args', '--log-level', log_level],
+                output='screen',
+            ),
+            LoadComposableNodes(
+                target_container='nav2_container',
+                condition=IfCondition(
+                    EqualsSubstitution(LaunchConfiguration('map'), '')
+                ),
+                composable_node_descriptions=[
+                    ComposableNode(
+                        package='nav2_map_server',
+                        plugin='nav2_map_server::MapServer',
+                        name='map_server',
+                        parameters=[nav2_configured_params],
+                    ),
+                ],
+            ),
+            LoadComposableNodes(
+                target_container='nav2_container',
+                condition=IfCondition(
+                    NotEqualsSubstitution(LaunchConfiguration('map'), '')
+                ),
+                composable_node_descriptions=[
+                    ComposableNode(
+                        package='nav2_map_server',
+                        plugin='nav2_map_server::MapServer',
+                        name='map_server',
+                        parameters=[
+                            nav2_configured_params,
+                            {'yaml_filename': map_yaml_file},
+                        ],
+                    ),
+                ],
+            ),
+            LoadComposableNodes(
+                target_container='nav2_container',
+                composable_node_descriptions=[
+                    ComposableNode(
+                        package='nav2_amcl',
+                        plugin='nav2_amcl::AmclNode',
+                        name='amcl',
+                        parameters=[nav2_configured_params],
+                    ),
+                    ComposableNode(
+                        package='nav2_lifecycle_manager',
+                        plugin='nav2_lifecycle_manager::LifecycleManager',
+                        name='lifecycle_manager_localization',
+                        parameters=[
+                            {'autostart': True, 'node_names': ['map_server', 'amcl']}
+                        ],
+                    ),
+                ],
+            ),
+        ],
+    )
+
     set_env_vars_resources = AppendEnvironmentVariable(
         'GZ_SIM_RESOURCE_PATH', os.path.join(bringup_dir2, 'models'))
     set_env_vars_resources2 = AppendEnvironmentVariable(
@@ -221,6 +304,7 @@ def generate_launch_description():
         remove_temp_sdf_file,
         ros_gz_bridge_node,
         spawn_entity_node,
+        nav2_composable_nodes
     ]
 
     return LaunchDescription(declared_arguments + nodes)
