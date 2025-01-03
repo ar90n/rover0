@@ -1,9 +1,17 @@
 #pragma once
 
+#include <optional>
+
 #include <geometry_msgs/msg/twist.hpp>
+#include "nav_msgs/msg/odometry.hpp"
+
 #include <rclcpp/subscription.hpp>
 #include <realtime_tools/realtime_buffer.h>
+#include <realtime_tools/realtime_publisher.h>
 #include <controller_interface/controller_interface.hpp>
+
+#include "rover0_controller/mecanum_kinematics.hpp"
+#include "wheel_odometry.hpp"
 
 namespace rover0_controller
 {
@@ -17,7 +25,7 @@ namespace rover0_controller
             std::string rear_left_wheel_joint_name{"rear_left_wheel_joint"};
             std::string rear_right_wheel_joint_name{"rear_right_wheel_joint"};
             double wheel_radius{0.028};
-            double wheelbase{0.14};
+            double wheel_base{0.14};
             double track_width{0.11};
         };
 
@@ -53,10 +61,17 @@ namespace rover0_controller
     private:
         Config config;
         std::map<std::string, std::reference_wrapper<hardware_interface::LoanedCommandInterface>> command_interface_map_{};
+        std::map<std::string, std::reference_wrapper<hardware_interface::LoanedStateInterface>> state_interface_map_{};
+
+        std::optional<mecanum_kinematics::MecanumKinematics> mecanum_kinematics_;
+        std::optional<WheelOdometry> wheel_odometry_;
 
         bool has_new_msg_{false};
         rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_sub_;
         realtime_tools::RealtimeBuffer<std::shared_ptr<geometry_msgs::msg::Twist>> cmd_vel_twist_ptr_;
         std::shared_ptr<geometry_msgs::msg::Twist> cmd_vel_twist_;
+
+        std::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::msg::Odometry>>
+          rt_odometry_pub_{nullptr};
     };
 }

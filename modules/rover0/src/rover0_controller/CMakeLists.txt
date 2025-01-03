@@ -17,9 +17,11 @@ ament_auto_find_build_dependencies()
 # Build your ROS 2 library
 ament_auto_add_library(${PROJECT_NAME} SHARED
   src/rover0_controller.cpp
+  src/wheel_odometry.cpp
+  src/mecanum_kinematics.cpp
 )
 
-target_include_directories(${PROJECT_NAME} 
+target_include_directories(${PROJECT_NAME}
   PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${COMMON_DIR}/include

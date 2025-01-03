@@ -1,9 +1,14 @@
+#include <iostream>
+
 #include "hardware_interface/system_interface.hpp"
+#include "tf2/LinearMath/Quaternion.h"
 
 #include "rover0_controller/rover0_controller.hpp"
 
 rover0_controller::Rover0Controller::Rover0Controller()
     : controller_interface::ControllerInterface(),
+      mecanum_kinematics_{std::nullopt},
+      wheel_odometry_{std::nullopt},
       has_new_msg_{false}
 {
 }
@@ -22,16 +27,55 @@ controller_interface::return_type rover0_controller::Rover0Controller::update(co
         return controller_interface::return_type::OK;
     }
 
-    double const r = (config.wheelbase + config.track_width) / 2;
-    double const front_left_wheel_angular_velocity = (cmd_vel_twist_->linear.x - cmd_vel_twist_->linear.y - r * cmd_vel_twist_->angular.z) / config.wheel_radius;
-    double const front_right_wheel_angular_velocity = (cmd_vel_twist_->linear.x + cmd_vel_twist_->linear.y + r * cmd_vel_twist_->angular.z) / config.wheel_radius;
-    double const rear_left_wheel_angular_velocity = (cmd_vel_twist_->linear.x + cmd_vel_twist_->linear.y - r * cmd_vel_twist_->angular.z) / config.wheel_radius;
-    double const rear_right_wheel_angular_velocity = (cmd_vel_twist_->linear.x - cmd_vel_twist_->linear.y + r * cmd_vel_twist_->angular.z) / config.wheel_radius;
+    if (!mecanum_kinematics_) {
+        return controller_interface::return_type::ERROR;
+    }
 
-    command_interface_map_.at(config.front_left_wheel_joint_name).get().set_value(front_left_wheel_angular_velocity);
-    command_interface_map_.at(config.front_right_wheel_joint_name).get().set_value(front_right_wheel_angular_velocity);
-    command_interface_map_.at(config.rear_left_wheel_joint_name).get().set_value(rear_left_wheel_angular_velocity);
-    command_interface_map_.at(config.rear_right_wheel_joint_name).get().set_value(rear_right_wheel_angular_velocity);
+    if (!wheel_odometry_) {
+        return controller_interface::return_type::ERROR;
+    }
+
+    auto const wheel_angular_velocity = mecanum_kinematics_->inverse(
+        rover0_controller::mecanum_kinematics::Twist {
+            cmd_vel_twist_->linear.x ,
+            cmd_vel_twist_->linear.y,
+            cmd_vel_twist_->angular.z
+        }
+    );
+
+    double const dt = period.seconds();
+    wheel_odometry_->update(
+        wheel_angular_velocity.front_left,
+        wheel_angular_velocity.front_right,
+        wheel_angular_velocity.rear_left,
+        wheel_angular_velocity.rear_right,
+        dt
+    );
+
+    command_interface_map_.at(config.front_left_wheel_joint_name).get().set_value(wheel_angular_velocity.front_left);
+    command_interface_map_.at(config.front_right_wheel_joint_name).get().set_value(wheel_angular_velocity.front_right);
+    command_interface_map_.at(config.rear_left_wheel_joint_name).get().set_value(wheel_angular_velocity.rear_left);
+    command_interface_map_.at(config.rear_right_wheel_joint_name).get().set_value(wheel_angular_velocity.rear_right);
+
+    bool const should_publish = true;
+    if( should_publish ) {
+        auto & odometry_msg = rt_odometry_pub_->msg_;
+        tf2::Quaternion orientation;
+        orientation.setRPY(0.0, 0.0, wheel_odometry_->getHeading());
+
+        odometry_msg.header.stamp = time;
+        odometry_msg.pose.pose.position.x = wheel_odometry_->getX();
+        odometry_msg.pose.pose.position.y = wheel_odometry_->getY();
+        odometry_msg.pose.pose.orientation.x = orientation.x();
+        odometry_msg.pose.pose.orientation.y = orientation.y();
+        odometry_msg.pose.pose.orientation.z = orientation.z();
+        odometry_msg.pose.pose.orientation.w = orientation.w();
+        odometry_msg.twist.twist.linear.x = wheel_odometry_->getLinearX();
+        odometry_msg.twist.twist.linear.y = wheel_odometry_->getLinearY();
+        odometry_msg.twist.twist.angular.z = wheel_odometry_->getAngular();
+        rt_odometry_pub_->unlockAndPublish();
+    }
+
     return controller_interface::return_type::OK;
 }
 
@@ -42,13 +86,16 @@ controller_interface::CallbackReturn rover0_controller::Rover0Controller::on_ini
     config.rear_left_wheel_joint_name = auto_declare<std::string>("rear_left_wheel_joint_name", config.rear_left_wheel_joint_name);
     config.rear_right_wheel_joint_name = auto_declare<std::string>("rear_right_wheel_joint_name", config.rear_right_wheel_joint_name);
     config.wheel_radius = auto_declare<double>("wheel_radius", config.wheel_radius);
-    config.wheelbase = auto_declare<double>("wheelbase", config.wheelbase);
+    config.wheel_base = auto_declare<double>("wheelbase", config.wheel_base);
     config.track_width = auto_declare<double>("track_width", config.track_width);
+
+    mecanum_kinematics_.emplace(config.wheel_radius, config.wheel_base, config.track_width);
+    wheel_odometry_.emplace(config.wheel_radius, config.wheel_base, config.track_width, 10);
 
     return controller_interface::CallbackReturn::SUCCESS;
 }
 
-controller_interface::CallbackReturn rover0_controller::Rover0Controller::on_configure(const rclcpp_lifecycle::State &previous_state)
+controller_interface::CallbackReturn rover0_controller::Rover0Controller::on_configure(const rclcpp_lifecycle::State &)
 {
     cmd_vel_sub_ = get_node()->create_subscription<geometry_msgs::msg::Twist>(
         "cmd_vel",
@@ -59,35 +106,46 @@ controller_interface::CallbackReturn rover0_controller::Rover0Controller::on_con
             has_new_msg_ = true;
         });
 
+    auto odometry_publisher_ = get_node()->create_publisher<nav_msgs::msg::Odometry>(
+      "wheel_odom", rclcpp::SystemDefaultsQoS());
+    rt_odometry_pub_ =
+      std::make_shared<realtime_tools::RealtimePublisher<nav_msgs::msg::Odometry>>(
+        odometry_publisher_);
+
     return controller_interface::CallbackReturn::SUCCESS;
 }
 
-controller_interface::CallbackReturn rover0_controller::Rover0Controller::on_activate(const rclcpp_lifecycle::State &previous_state)
+controller_interface::CallbackReturn rover0_controller::Rover0Controller::on_activate(const rclcpp_lifecycle::State &)
 {
     for (auto &interface : command_interfaces_)
     {
         command_interface_map_.emplace(interface.get_prefix_name(), interface);
     }
 
+    for (auto &interface : state_interfaces_)
+    {
+        state_interface_map_.emplace(interface.get_prefix_name(), interface);
+    }
+
     return controller_interface::CallbackReturn::SUCCESS;
 }
 
-controller_interface::CallbackReturn rover0_controller::Rover0Controller::on_deactivate(const rclcpp_lifecycle::State &previous_state)
+controller_interface::CallbackReturn rover0_controller::Rover0Controller::on_deactivate(const rclcpp_lifecycle::State &)
 {
     return controller_interface::CallbackReturn::SUCCESS;
 }
 
-controller_interface::CallbackReturn rover0_controller::Rover0Controller::on_cleanup(const rclcpp_lifecycle::State &previous_state)
+controller_interface::CallbackReturn rover0_controller::Rover0Controller::on_cleanup(const rclcpp_lifecycle::State &)
 {
     return controller_interface::CallbackReturn::SUCCESS;
 }
 
-controller_interface::CallbackReturn rover0_controller::Rover0Controller::on_error(const rclcpp_lifecycle::State &previous_state)
+controller_interface::CallbackReturn rover0_controller::Rover0Controller::on_error(const rclcpp_lifecycle::State &)
 {
     return controller_interface::CallbackReturn::SUCCESS;
 }
 
-controller_interface::CallbackReturn rover0_controller::Rover0Controller::on_shutdown(const rclcpp_lifecycle::State &previous_state)
+controller_interface::CallbackReturn rover0_controller::Rover0Controller::on_shutdown(const rclcpp_lifecycle::State &)
 {
     return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -101,14 +159,25 @@ controller_interface::InterfaceConfiguration rover0_controller::Rover0Controller
             config.front_right_wheel_joint_name + "/" + hardware_interface::HW_IF_VELOCITY,
             config.rear_left_wheel_joint_name + "/" + hardware_interface::HW_IF_VELOCITY,
             config.rear_right_wheel_joint_name + "/" + hardware_interface::HW_IF_VELOCITY,
-        }};
+        }
+    };
 
     return command_interfaces_config;
 }
 
 controller_interface::InterfaceConfiguration rover0_controller::Rover0Controller::state_interface_configuration() const
 {
-    return controller_interface::InterfaceConfiguration{};
+    controller_interface::InterfaceConfiguration state_interfaces_config{
+        controller_interface::interface_configuration_type::INDIVIDUAL,
+        {
+            config.front_left_wheel_joint_name + "/" + hardware_interface::HW_IF_VELOCITY,
+            config.front_right_wheel_joint_name + "/" + hardware_interface::HW_IF_VELOCITY,
+            config.rear_left_wheel_joint_name + "/" + hardware_interface::HW_IF_VELOCITY,
+            config.rear_right_wheel_joint_name + "/" + hardware_interface::HW_IF_VELOCITY,
+        }
+    };
+
+    return state_interfaces_config;
 }
 
 #include "pluginlib/class_list_macros.hpp"
