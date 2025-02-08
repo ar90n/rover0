@@ -57,12 +57,12 @@ controller_interface::return_type rover0_controller::Rover0Controller::update(co
     command_interface_map_.at(config.rear_left_wheel_joint_name).get().set_value(wheel_angular_velocity.rear_left);
     command_interface_map_.at(config.rear_right_wheel_joint_name).get().set_value(wheel_angular_velocity.rear_right);
 
-    bool const should_publish = true;
-    if( should_publish ) {
-        auto & odometry_msg = rt_odometry_pub_->msg_;
+    if( should_publish_odom(time) && rt_odometry_pub_->trylock() ) {
+        last_odom_publish_time_ = time;
         tf2::Quaternion orientation;
         orientation.setRPY(0.0, 0.0, wheel_odometry_->getHeading());
 
+        auto & odometry_msg = rt_odometry_pub_->msg_;
         odometry_msg.header.stamp = time;
         odometry_msg.pose.pose.position.x = wheel_odometry_->getX();
         odometry_msg.pose.pose.position.y = wheel_odometry_->getY();
@@ -88,9 +88,15 @@ controller_interface::CallbackReturn rover0_controller::Rover0Controller::on_ini
     config.wheel_radius = auto_declare<double>("wheel_radius", config.wheel_radius);
     config.wheel_base = auto_declare<double>("wheelbase", config.wheel_base);
     config.track_width = auto_declare<double>("track_width", config.track_width);
+    config.odom_topic = auto_declare<std::string>("odom_topic", config.odom_topic);
+    config.odom_publish_rate = auto_declare<double>("odom_publish_rate", config.odom_publish_rate);
+    config.odom_frame_id = auto_declare<std::string>("odom_frame_id", config.odom_frame_id);
+    config.base_frame_id = auto_declare<std::string>("base_frame_id", config.base_frame_id);
 
     mecanum_kinematics_.emplace(config.wheel_radius, config.wheel_base, config.track_width);
     wheel_odometry_.emplace(config.wheel_radius, config.wheel_base, config.track_width, 10);
+
+    last_odom_publish_time_ = get_node()->now();
 
     return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -107,7 +113,7 @@ controller_interface::CallbackReturn rover0_controller::Rover0Controller::on_con
         });
 
     auto odometry_publisher_ = get_node()->create_publisher<nav_msgs::msg::Odometry>(
-      "wheel_odom", rclcpp::SystemDefaultsQoS());
+      config.odom_topic, rclcpp::SystemDefaultsQoS());
     rt_odometry_pub_ =
       std::make_shared<realtime_tools::RealtimePublisher<nav_msgs::msg::Odometry>>(
         odometry_publisher_);
@@ -178,6 +184,12 @@ controller_interface::InterfaceConfiguration rover0_controller::Rover0Controller
     };
 
     return state_interfaces_config;
+}
+
+bool rover0_controller::Rover0Controller::should_publish_odom(rclcpp::Time const &time) const
+{
+    rclcpp::Duration const time_since_last_odom_publish = time - last_odom_publish_time_;
+    return (1.0 < time_since_last_odom_publish.seconds() * config.odom_publish_rate);
 }
 
 #include "pluginlib/class_list_macros.hpp"

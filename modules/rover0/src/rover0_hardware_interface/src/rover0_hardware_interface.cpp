@@ -4,11 +4,6 @@
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #include <termios.h>
-#include <variant>
-
-#include <iostream>
-#include <map>
-#include <numbers>
 
 #include <transport.hpp>
 #include <message.hpp>
@@ -145,6 +140,8 @@ void rover0_hardware_interface::IMUState::update(message::ImuData param, int16_t
     case message::ImuData::ACCEL_Z:
         linear_acceleration_[2] = calc_linear_acceleration(value, 0.0); // skip offset for z-axis because of gravity
         break;
+    case message::ImuData::TEMP:
+        break;
     }
 }
 
@@ -249,7 +246,7 @@ hardware_interface::CallbackReturn rover0_hardware_interface::Rover0HardwareInte
     {
         if (joint.command_interfaces.size() != 1)
         {
-            RCLCPP_FATAL(rclcpp::get_logger("rover0_hardware_interface"), "Joint '%s' has %d command interfaces, 1 expected", joint.name.c_str(), joint.command_interfaces.size());
+            RCLCPP_FATAL(rclcpp::get_logger("rover0_hardware_interface"), "Joint '%s' has %ld command interfaces, 1 expected", joint.name.c_str(), joint.command_interfaces.size());
             return hardware_interface::CallbackReturn::ERROR;
         }
 
@@ -259,9 +256,9 @@ hardware_interface::CallbackReturn rover0_hardware_interface::Rover0HardwareInte
             return hardware_interface::CallbackReturn::ERROR;
         }
 
-        if (joint.state_interfaces.size() != 1)
+        if (joint.state_interfaces.size() != 2)
         {
-            RCLCPP_FATAL(rclcpp::get_logger("rover0_hardware_interface"), "Joint '%s' has %d state interfaces, 1 expected", joint.name.c_str(), joint.state_interfaces.size());
+            RCLCPP_FATAL(rclcpp::get_logger("rover0_hardware_interface"), "Joint '%s' has %ld state interfaces, 2 expected", joint.name.c_str(), joint.state_interfaces.size());
             return hardware_interface::CallbackReturn::ERROR;
         }
 
@@ -275,7 +272,7 @@ hardware_interface::CallbackReturn rover0_hardware_interface::Rover0HardwareInte
     return hardware_interface::CallbackReturn::SUCCESS;
 }
 
-hardware_interface::CallbackReturn rover0_hardware_interface::Rover0HardwareInterface::on_configure(const rclcpp_lifecycle::State &previous_state)
+hardware_interface::CallbackReturn rover0_hardware_interface::Rover0HardwareInterface::on_configure(const rclcpp_lifecycle::State &)
 {
     fd_ = open(config_.serial_port.c_str(), O_RDWR);
     if (fd_ < 0)
@@ -285,7 +282,14 @@ hardware_interface::CallbackReturn rover0_hardware_interface::Rover0HardwareInte
 
     struct termios tio
     {
+        .c_iflag = 0,
+        .c_oflag = 0,
         .c_cflag = CREAD | CLOCAL | CS8,
+        .c_lflag = 0,
+        .c_line = 0,
+        .c_cc = {0},
+        .c_ispeed = 0,
+        .c_ospeed = 0
     };
     cfsetispeed(&tio, B115200);
     cfsetospeed(&tio, B115200);
@@ -300,7 +304,7 @@ hardware_interface::CallbackReturn rover0_hardware_interface::Rover0HardwareInte
     return hardware_interface::CallbackReturn::SUCCESS;
 }
 
-hardware_interface::CallbackReturn rover0_hardware_interface::Rover0HardwareInterface::on_cleanup(const rclcpp_lifecycle::State &previous_state)
+hardware_interface::CallbackReturn rover0_hardware_interface::Rover0HardwareInterface::on_cleanup(const rclcpp_lifecycle::State &)
 {
     auto const ret{close(fd_)};
     if (ret < 0)
@@ -311,12 +315,12 @@ hardware_interface::CallbackReturn rover0_hardware_interface::Rover0HardwareInte
     return hardware_interface::CallbackReturn::SUCCESS;
 }
 
-hardware_interface::CallbackReturn rover0_hardware_interface::Rover0HardwareInterface::on_activate(const rclcpp_lifecycle::State &previous_state)
+hardware_interface::CallbackReturn rover0_hardware_interface::Rover0HardwareInterface::on_activate(const rclcpp_lifecycle::State &)
 {
     return hardware_interface::CallbackReturn::SUCCESS;
 }
 
-hardware_interface::CallbackReturn rover0_hardware_interface::Rover0HardwareInterface::on_deactivate(const rclcpp_lifecycle::State &previous_state)
+hardware_interface::CallbackReturn rover0_hardware_interface::Rover0HardwareInterface::on_deactivate(const rclcpp_lifecycle::State &)
 {
     return hardware_interface::CallbackReturn::SUCCESS;
 }
@@ -346,7 +350,7 @@ std::vector<hardware_interface::CommandInterface> rover0_hardware_interface::Rov
     return command_interfaces;
 }
 
-hardware_interface::return_type rover0_hardware_interface::Rover0HardwareInterface::read(const rclcpp::Time &time, const rclcpp::Duration &period)
+hardware_interface::return_type rover0_hardware_interface::Rover0HardwareInterface::read(const rclcpp::Time &, const rclcpp::Duration &period)
 {
     read_call_count_++;
     transport::reset();
@@ -396,7 +400,7 @@ hardware_interface::return_type rover0_hardware_interface::Rover0HardwareInterfa
     return hardware_interface::return_type::OK;
 }
 
-hardware_interface::return_type rover0_hardware_interface::Rover0HardwareInterface::write(const rclcpp::Time &time, const rclcpp::Duration &period)
+hardware_interface::return_type rover0_hardware_interface::Rover0HardwareInterface::write(const rclcpp::Time &, const rclcpp::Duration &)
 {
     for (auto &command : wheel_commands_)
     {

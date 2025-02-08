@@ -7,7 +7,7 @@
             <sensor name="lidar" type="gpu_lidar">
                 <always_on>true</always_on>
                 <visualize>true</visualize>
-                <update_rate>10</update_rate>
+                <update_rate>1</update_rate>
                 <gz_frame_id>${frame_id}</gz_frame_id>
                 <topic>${topic}</topic>
                 <pose>${x_off} 0 ${mount_height + (base_height + lidar_height) / 2} 0 0 0</pose>

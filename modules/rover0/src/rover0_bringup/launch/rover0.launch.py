@@ -55,7 +55,7 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'nav2_params_file',
-            default_value=os.path.join(bringup_dir, 'params', 'nav2_params.yaml'),
+            default_value=os.path.join(bringup_dir4, 'config', 'nav2.yaml'),
             description='Full path to the ROS2 parameters for navigation2',
         ),
         DeclareLaunchArgument(
@@ -84,6 +84,7 @@ def generate_launch_description():
             'P': LaunchConfiguration('pitch', default='0.00'),
             'Y': LaunchConfiguration('yaw', default='0.00')}
 
+    use_sim_time = IfElseSubstitution(use_sim, if_value='True', else_value='False')
     package_name = IfElseSubstitution(use_sim, if_value="rover0_gz_description", else_value="rover0_robot_description")
     model_xacro_file_name = IfElseSubstitution(use_sim, if_value="rover0_gz.urdf.xacro", else_value="rover0_robot.urdf.xacro")
     robot_description_content = Command(
@@ -104,26 +105,29 @@ def generate_launch_description():
         package="robot_state_publisher",
         executable="robot_state_publisher",
         output="both",
-        parameters=[robot_description],
+        parameters=[robot_description, {"use_sim_time": use_sim_time}],
     )
 
     joint_state_broadcaster_spawner = Node(
         package="controller_manager",
         executable="spawner",
         arguments=["joint_state_broadcaster", "-c", "/controller_manager"],
-        condition=UnlessCondition(use_sim)
+        condition=UnlessCondition(use_sim),
+        parameters=[{"use_sim_time": use_sim_time}]
     )
     imu_sensor_broadcaster_spawner = Node(
         package="controller_manager",
         executable="spawner",
         arguments=["imu_sensor_broadcaster", "-c", "/controller_manager"],
-        condition=UnlessCondition(use_sim)
+        condition=UnlessCondition(use_sim),
+        parameters=[{"use_sim_time": use_sim_time}]
     )
 
     rover0_controller_spawner = Node(
         package="controller_manager",
         executable="spawner",
         arguments=["rover0_controller",  "-c", "/controller_manager"],
+        parameters=[{"use_sim_time": use_sim_time}]
     )
 
     imu_filter_madgwick_node = Node(
@@ -133,7 +137,8 @@ def generate_launch_description():
         parameters=[{
             "use_mag": False,
             "gain": 0.1,
-            "publish_tf": False
+            "publish_tf": False,
+            "use_sim_time": use_sim_time
         }],
         remappings=[
             ('/imu/data_raw', '/imu_sensor_broadcaster/imu'),
@@ -143,7 +148,7 @@ def generate_launch_description():
 
     rviz_config_file = PathJoinSubstitution(
         [
-            FindPackageShare("rover0_description"), "rviz", "rover0.rviz"
+            FindPackageShare("rover0_description"), "rviz", "rover0_default_view.rviz"
         ]
     )
     rviz_node = Node(
@@ -152,6 +157,7 @@ def generate_launch_description():
         executable="rviz2",
         name="rviz2",
         arguments=["-d", rviz_config_file],
+        parameters=[{"use_sim_time": use_sim_time}]
     )
 
     robot_controllers = PathJoinSubstitution(
@@ -163,7 +169,7 @@ def generate_launch_description():
         condition=UnlessCondition(use_sim),
         package="controller_manager",
         executable="ros2_control_node",
-        parameters=[robot_description, robot_controllers],
+        parameters=[robot_description, robot_controllers, {"use_simt_time": use_sim_time}],
         output="both"
     )
 
@@ -183,6 +189,7 @@ def generate_launch_description():
         ),
         condition=IfCondition(PythonExpression(
             [use_sim, ' and not ', headless])),
+        #launch_arguments={'gz_args': ['-v4 -g '], 'use_sim_time': use_sim_time}.items(),
         launch_arguments={'gz_args': ['-v4 -g ']}.items(),
     )
 
@@ -201,7 +208,7 @@ def generate_launch_description():
         parameters=[{
             'config_file': ros_gz_bridge_config_file,
             'expand_gz_topic_names': True,
-            'use_sim_time': True,
+            'use_sim_time': use_sim_time,
         }],
         output='screen'
     )
@@ -232,7 +239,7 @@ def generate_launch_description():
         executable='ekf_node',
         name='ekf_filter_node',
         output='screen',
-        parameters=[ekf_configured_params]
+        parameters=[ekf_configured_params, {"use_sim_time": use_sim_time}]
     )
 
     nav2_configured_params = ParameterFile(
@@ -264,7 +271,7 @@ def generate_launch_description():
                         package='nav2_map_server',
                         plugin='nav2_map_server::MapServer',
                         name='map_server',
-                        parameters=[nav2_configured_params],
+                        parameters=[nav2_configured_params, {'use_sim_time': use_sim_time}],
                     ),
                 ],
             ),
@@ -280,7 +287,10 @@ def generate_launch_description():
                         name='map_server',
                         parameters=[
                             nav2_configured_params,
-                            {'yaml_filename': map_yaml_file},
+                            {
+                                'yaml_filename': map_yaml_file,
+                                'use_sim_time': use_sim_time
+                            },
                         ],
                     ),
                 ],
@@ -292,19 +302,27 @@ def generate_launch_description():
                         package='nav2_amcl',
                         plugin='nav2_amcl::AmclNode',
                         name='amcl',
-                        parameters=[nav2_configured_params],
+                        parameters=[nav2_configured_params, {'use_sim_time': use_sim_time}],
                     ),
                     ComposableNode(
                         package='nav2_lifecycle_manager',
                         plugin='nav2_lifecycle_manager::LifecycleManager',
                         name='lifecycle_manager_localization',
                         parameters=[
-                            {'autostart': True, 'node_names': ['map_server', 'amcl']}
+                            {'autostart': True, 'node_names': ['map_server', 'amcl'], 'use_sim_time': use_sim_time}
                         ],
                     ),
                 ],
             ),
         ],
+    )
+
+    static_odom_to_base_footprint_pub = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='static_odom_to_base_footprint',
+        arguments=['0', '0', '0', '0', '0', '0', 'odom', 'base_footprint'],
+        output='screen'
     )
 
     set_env_vars_resources = AppendEnvironmentVariable(
@@ -330,7 +348,8 @@ def generate_launch_description():
         ros_gz_bridge_node,
         spawn_entity_node,
         nav2_composable_nodes,
-        ekf_node
+        ekf_node,
+        static_odom_to_base_footprint_pub
     ]
 
     return LaunchDescription(declared_arguments + nodes)

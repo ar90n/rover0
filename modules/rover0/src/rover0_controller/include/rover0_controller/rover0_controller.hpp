@@ -3,6 +3,7 @@
 #include <optional>
 
 #include <geometry_msgs/msg/twist.hpp>
+#include <tf2_msgs/msg/tf_message.hpp>
 #include "nav_msgs/msg/odometry.hpp"
 
 #include <rclcpp/subscription.hpp>
@@ -27,6 +28,10 @@ namespace rover0_controller
             double wheel_radius{0.028};
             double wheel_base{0.14};
             double track_width{0.11};
+            std::string odom_topic{"/wheel_odom"};
+            double odom_publish_rate{10.0};
+            std::string odom_frame_id{"odom"};
+            std::string base_frame_id{"base_link"};
         };
 
     public:
@@ -71,7 +76,10 @@ namespace rover0_controller
         realtime_tools::RealtimeBuffer<std::shared_ptr<geometry_msgs::msg::Twist>> cmd_vel_twist_ptr_;
         std::shared_ptr<geometry_msgs::msg::Twist> cmd_vel_twist_;
 
+        rclcpp::Time last_odom_publish_time_{0};
         std::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::msg::Odometry>>
           rt_odometry_pub_{nullptr};
+
+        bool should_publish_odom(rclcpp::Time const &time) const;
     };
 }

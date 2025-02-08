@@ -12,6 +12,7 @@
                 <parameters>$(find rover0_bringup)/config/rover0_controllers.yaml</parameters>
                 <ros>
                     <remapping>/controller_manager/robot_description:=/robot_description</remapping>
+                    <parameter name="use_sim_time" value="true"/>
                 </ros>
             </plugin>
             <plugin filename="gz-sim-joint-state-publisher-system" name="gz::sim::systems::JointStatePublisher">
