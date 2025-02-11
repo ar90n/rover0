@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "hardware_interface/system_interface.hpp"
+#include "controller_interface/controller_interface.hpp"
 #include "tf2/LinearMath/Quaternion.h"
 
 #include "rover0_controller/rover0_controller.hpp"
@@ -52,10 +53,10 @@ controller_interface::return_type rover0_controller::Rover0Controller::update(co
         dt
     );
 
-    command_interface_map_.at(config.front_left_wheel_joint_name).get().set_value(wheel_angular_velocity.front_left);
-    command_interface_map_.at(config.front_right_wheel_joint_name).get().set_value(wheel_angular_velocity.front_right);
-    command_interface_map_.at(config.rear_left_wheel_joint_name).get().set_value(wheel_angular_velocity.rear_left);
-    command_interface_map_.at(config.rear_right_wheel_joint_name).get().set_value(wheel_angular_velocity.rear_right);
+    (void)command_interface_map_.at(config.front_left_wheel_joint_name).get().set_value(wheel_angular_velocity.front_left);
+    (void)command_interface_map_.at(config.front_right_wheel_joint_name).get().set_value(wheel_angular_velocity.front_right);
+    (void)command_interface_map_.at(config.rear_left_wheel_joint_name).get().set_value(wheel_angular_velocity.rear_left);
+    (void)command_interface_map_.at(config.rear_right_wheel_joint_name).get().set_value(wheel_angular_velocity.rear_right);
 
     if( should_publish_odom(time) && rt_odometry_pub_->trylock() ) {
         last_odom_publish_time_ = time;

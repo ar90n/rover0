@@ -17,6 +17,11 @@
   <depend>nav_msgs</depend>
   <depend>tf2</depend>
   <depend>tf2_msgs</depend>
+  <depend>ros2_control</depend>
+  <depend>ros2_controllers</depend>
+  <depend>control_msgs</depend>
+  <depend>control_toolbox</depend>
+  <depend>kinematics_interface</depend>
 
   <build_depend>pluginlib</build_depend>
 
