@@ -175,7 +175,8 @@ def generate_launch_description():
 
     world_sdf = tempfile.mktemp(prefix='nav2_', suffix='.sdf')
     world_sdf_xacro = ExecuteProcess(
-        cmd=['xacro', '-o', world_sdf, ['headless:=', headless], world])
+        cmd=['xacro', '-o', world_sdf, ['headless:=', 'False'], world])
+        #cmd=['xacro', '-o', world_sdf, world])
     gazebo_server = ExecuteProcess(
         cmd=['gz', 'sim', '-r', '-s', world_sdf],
         output='screen',
@@ -189,8 +190,7 @@ def generate_launch_description():
         ),
         condition=IfCondition(PythonExpression(
             [use_sim, ' and not ', headless])),
-        #launch_arguments={'gz_args': ['-v4 -g '], 'use_sim_time': use_sim_time}.items(),
-        launch_arguments={'gz_args': ['-v4 -g ']}.items(),
+        launch_arguments={'gz_args': ['-v 4 -g '], 'use_sim_time': use_sim_time}.items(),
     )
 
     remove_temp_sdf_file = RegisterEventHandler(event_handler=OnShutdown(
