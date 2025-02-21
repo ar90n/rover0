@@ -24,7 +24,8 @@
         <joint name="${prefix}_imu_joint" type="fixed">
           <parent link="${parent}"/>
           <child link="${prefix}_imu_link"/>
-          <origin xyz="${x_off} ${y_off} ${z_off}"/> <!-- TODO: update correct value -->
+          <origin xyz="${x_off} ${y_off} ${z_off}" rpy="0 0 0"/> <!-- TODO: update correct value -->
+          <axis xyz="0 0 1"/>
         </joint>
     </xacro:macro>
 </robot>

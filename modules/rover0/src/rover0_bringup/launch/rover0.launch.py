@@ -130,22 +130,6 @@ def generate_launch_description():
         parameters=[{"use_sim_time": use_sim_time}]
     )
 
-    imu_filter_madgwick_node = Node(
-        package="imu_filter_madgwick",
-        executable="imu_filter_madgwick_node",
-        output="screen",
-        parameters=[{
-            "use_mag": False,
-            "gain": 0.1,
-            "publish_tf": False,
-            "use_sim_time": use_sim_time
-        }],
-        remappings=[
-            ('/imu/data_raw', '/imu_sensor_broadcaster/imu'),
-            ('/imu/data', '/imu/filtered')
-        ],
-    )
-
     rviz_config_file = PathJoinSubstitution(
         [
             FindPackageShare("rover0_description"), "rviz", "rover0_default_view.rviz"
@@ -176,7 +160,6 @@ def generate_launch_description():
     world_sdf = tempfile.mktemp(prefix='nav2_', suffix='.sdf')
     world_sdf_xacro = ExecuteProcess(
         cmd=['xacro', '-o', world_sdf, ['headless:=', 'False'], world])
-        #cmd=['xacro', '-o', world_sdf, world])
     gazebo_server = ExecuteProcess(
         cmd=['gz', 'sim', '-r', '-s', world_sdf],
         output='screen',
@@ -338,7 +321,6 @@ def generate_launch_description():
         joint_state_broadcaster_spawner,
         imu_sensor_broadcaster_spawner,
         rover0_controller_spawner,
-        imu_filter_madgwick_node,
         rviz_node,
         ros2_control_node,
         world_sdf_xacro,
