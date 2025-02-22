@@ -288,11 +288,46 @@ def generate_launch_description():
                         parameters=[nav2_configured_params, {'use_sim_time': use_sim_time}],
                     ),
                     ComposableNode(
+                        package='nav2_planner',
+                        plugin='nav2_planner::PlannerServer',
+                        name='planner_server',
+                        parameters=[nav2_configured_params, {'use_sim_time': use_sim_time}],
+                    ),
+                    ComposableNode(
+                        package='nav2_controller',
+                        plugin='nav2_controller::ControllerServer',
+                        name='controller_server',
+                        parameters=[nav2_configured_params, {'use_sim_time': use_sim_time}],
+                    ),
+                    ComposableNode(
+                        package='nav2_behaviors',
+                        plugin='behavior_server::BehaviorServer',
+                        name='behavior_server',
+                        parameters=[nav2_configured_params, {'use_sim_time': use_sim_time}],
+                    ),
+                    ComposableNode(
+                        package='nav2_bt_navigator',
+                        plugin='nav2_bt_navigator::BtNavigator',
+                        name='bt_navigator',
+                        parameters=[nav2_configured_params, {'use_sim_time': use_sim_time}],
+                    ),
+                    ComposableNode(
                         package='nav2_lifecycle_manager',
                         plugin='nav2_lifecycle_manager::LifecycleManager',
                         name='lifecycle_manager_localization',
                         parameters=[
-                            {'autostart': True, 'node_names': ['map_server', 'amcl'], 'use_sim_time': use_sim_time}
+                            {
+                                'autostart': True,
+                                'node_names': [
+                                    'map_server',
+                                    'amcl',
+                                    'planner_server',
+                                    'controller_server',
+                                    'behavior_server',
+                                    'bt_navigator'
+                                ],
+                                'use_sim_time': use_sim_time
+                            }
                         ],
                     ),
                 ],
