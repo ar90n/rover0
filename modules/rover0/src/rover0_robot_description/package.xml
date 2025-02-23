@@ -6,11 +6,9 @@
   <description>Descriptions for rover0 real robot</description>
   <maintainer email="argon.argon.argon@gmail.com">root</maintainer>
   <license>MIT</license>
-
   <buildtool_depend>ament_cmake_auto</buildtool_depend>
-
   <exec_depend>xacro</exec_depend>
-
+  <test_depend>ament_xmllint</test_depend>
   <export>
     <build_type>ament_cmake</build_type>
   </export>

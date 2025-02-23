@@ -6,26 +6,21 @@
   <description>Launch files and configurations for rover0</description>
   <maintainer email="argon.argon.argon@gmail.com">Masahiro Wada</maintainer>
   <license>MIT</license>
-
   <buildtool_depend>ament_cmake_auto</buildtool_depend>
-
   <exec_depend>robot_state_publisher</exec_depend>
   <exec_depend>ros2_control</exec_depend>
   <exec_depend>controller_manager</exec_depend>
   <exec_depend>imu_filter_madgwick</exec_depend>
-
   <exec_depend>navigation2</exec_depend>
   <exec_depend>nav2_bringup</exec_depend>
   <exec_depend>nav2_minimal_tb3_sim</exec_depend>
   <exec_depend>robot_localization</exec_depend>
   <exec_depend>rmw_cyclonedds_cpp</exec_depend>
-
   <exec_depend>xacro</exec_depend>
-
   <test_depend>teleop_twist_keyboard</test_depend>
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
-
+  <test_depend>ament_xmllint</test_depend>
   <export>
     <build_type>ament_cmake</build_type>
   </export>

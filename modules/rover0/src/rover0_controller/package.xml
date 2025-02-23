@@ -6,9 +6,7 @@
   <description>TODO: Package description</description>
   <maintainer email="argon.argon.argon@gmail.com">root</maintainer>
   <license>MIT</license>
-
   <buildtool_depend>ament_cmake_auto</buildtool_depend>
-
   <depend>controller_interface</depend>
   <depend>hardware_interface</depend>
   <depend>realtime_tools</depend>
@@ -23,12 +21,10 @@
   <depend>control_toolbox</depend>
   <depend>kinematics_interface</depend>
   <depend>rmw_cyclonedds_cpp</depend>
-
   <build_depend>pluginlib</build_depend>
-
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
-
+  <test_depend>ament_xmllint</test_depend>
   <export>
     <build_type>ament_cmake</build_type>
   </export>
