@@ -222,7 +222,10 @@ def generate_launch_description():
         executable='ekf_node',
         name='ekf_filter_node',
         output='screen',
-        parameters=[ekf_configured_params, {"use_sim_time": use_sim_time}]
+        parameters=[ekf_configured_params, {"use_sim_time": use_sim_time}],
+        remappings=[
+            ('/odometry/filtered', '/odom')
+        ]
     )
 
     nav2_configured_params = ParameterFile(
