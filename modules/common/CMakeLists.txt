@@ -48,7 +48,22 @@ install(EXPORT ${PROJECT_NAME}Targets
     DESTINATION lib/cmake/${PROJECT_NAME}
 )
 
-add_custom_target(${PROJECT_NAME}-test
-    COMMAND g++ -std=c++20 ${SRC_DIR}/endian_utils.cpp ${SRC_DIR}/message.cpp ${TEST_DIR}/main.cpp ${TEST_DIR}/endian_utils_test.cpp ${TEST_DIR}/message_test.cpp -o common-test -I ${SRC_DIR} -I ${INCLUDE_DIR}
-    COMMENT "Run test"
+# Add test executable
+add_executable(${PROJECT_NAME}-test
+    ${TEST_DIR}/main.cpp
+    ${TEST_DIR}/endian_utils_test.cpp
+    ${TEST_DIR}/message_test.cpp
+    ${TEST_DIR}/queue_test.cpp
+)
+
+# Link with the library
+target_link_libraries(${PROJECT_NAME}-test PRIVATE ${PROJECT_NAME})
+
+# Include directories for tests
+target_include_directories(${PROJECT_NAME}-test PRIVATE ${INCLUDE_DIR} ${TEST_DIR})
+
+# Set C++ standard for tests
+set_target_properties(${PROJECT_NAME}-test PROPERTIES
+    CXX_STANDARD 20
+    CXX_STANDARD_REQUIRED ON
 )
