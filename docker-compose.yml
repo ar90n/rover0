@@ -1,10 +1,10 @@
 version: "3.9"
 
 x-base: &base
-  network_mode: "host"
   restart: always
 
 x-environment: &environment
+  ENV: "dev"
   ROS_DOMAIN_ID: 104
 
 services:
@@ -12,23 +12,28 @@ services:
     <<: *base
     image: rover0/rover0
     build:
-      context: src/rover0
+      context: modules/rover0
     container_name: rover0
+    ipc: host
+    volumes:
+      - /run/udev
+      - ./modules:/modules
+    working_dir: /modules/rover0
     environment:
       <<: *environment
-        #command: ros2 launch rosbot_bringup bringup.launch.py
-    command: tail -f /dev/null
-
   teleop:
     <<: *base
     image: rover0/teleop
     build:
-      context: src/teleop
+      context: modules/teleop
     container_name: teleop
+    ipc: host
     volumes:
       - /run/udev
+      - ./modules:/modules
     devices:
-      - /dev/dma_heap
+      - /dev/dma_heap/linux,cma
+      - /dev/dma_heap/system
       - /dev/media0
       - /dev/media1
       - /dev/media2
@@ -50,16 +55,25 @@ services:
       - /dev/video22
       - /dev/video23
       - /dev/video31
+      - ${MOTOR_SERIAL_PORT:?err}
+    ports:
+      - "${FOXGLOVE_WS_PORT:-8765}:${FOXGLOVE_WS_PORT:-8765}"
+    working_dir: /modules/teleop
     environment:
       <<: *environment
-    command: tail -f /dev/null
-
+      FOXGLOVE_WS_PORT: ${FOXGLOVE_WS_PORT:-8765}
   uros-agent-lidar:
     <<: *base
-    image: microros/micro-ros-agent:jazzy
+    image: rover0/uros-agent-lidar
+    build:
+      context: modules/uros-agent-lidar
     container_name: uros-agent-lidar
+    ipc: host
+    volumes:
+      - ./modules:/modules
+    working_dir: /modules/uros-agent-lidar/
     devices:
       - ${LIDAR_SERIAL_PORT:?err}
     environment:
       <<: *environment
-    command: serial -D $LIDAR_SERIAL_PORT serial -b 115200 -v1
+    command: serial -D $LIDAR_SERIAL_PORT serial -b 230400 -v1
