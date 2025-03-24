@@ -1,0 +1,5 @@
+camera:
+  ros__parameters:
+    #camera_info_url: "file:///modules/rover0/src/teleop_bringup/config/ov5647_calibration.yaml"
+    camera_name: "ov5647_cam"
+    camera_frame_id: "ov5647_cam"

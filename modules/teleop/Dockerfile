@@ -29,13 +29,23 @@ EOF
 
 FROM ros:jazzy-ros-base-noble
 
+RUN usermod -aG video root
+
 RUN apt update  && \
     apt install -y libjpeg8 libtiff6 libpng16-16 libexif12 libboost-program-options1.83.0 && \
     apt clean
 
 COPY --from=builder /usr/local/bin/* /usr/local/bin/
 COPY --from=builder /usr/local/share/libcamera /usr/local/share/libcamera
+COPY --from=builder /usr/local/include/libcamera /usr/local/include/libcamera
 COPY --from=builder /usr/local/share/libpisp /usr/local/share/libpisp
+COPY --from=builder /usr/local/include/libpisp /usr/local/include/libpiso
+COPY --from=builder /usr/local/share/rpi-camera-assets /usr/local/share/rpi-camera-assets
+COPY --from=builder /usr/local/include/rpicam-apps /usr/local/include/rpicam-apps
+COPY --from=builder /usr/local/include/libcamera-apps /usr/local/include/libcamera-apps
 COPY --from=builder /usr/local/lib/aarch64-linux-gnu /usr/local/lib/aarch64-linux-gnu
 
 RUN ldconfig
+
+COPY ./entrypoint.sh /
+ENTRYPOINT ["/bin/sh", "/entrypoint.sh"]
