@@ -64,9 +64,9 @@ struct Config
   static constexpr uint UART_CONTROL        = 0;
   static constexpr uint UART_CONTROL_TX_PIN = 4;
   static constexpr uint UART_CONTROL_RX_PIN = 5;
-  static constexpr uint UART_BUFFER_SIZE    = 256;
+  static constexpr uint UART_BUFFER_SIZE    = 1024;
   static constexpr uint ROS_DOMAIN_ID       = 104;
-  static constexpr uint LIDAR_RPM           = 320;
+  static constexpr uint LIDAR_RPM           = 270;
   static constexpr uint UROS_TIMEOUT_MS     = 1000;
   static constexpr uint UROS_ATTEMPTS       = 120;
 };
@@ -89,6 +89,7 @@ auto gpio_pwm   = GpioPWM::instance();
 
 namespace {
 float      distances[360];
+float      intensities[360];
 uint32_t   distances_index   = 0;
 uint32_t   last_timestamp_us = 0;
 static int sec               = 0;
@@ -104,11 +105,6 @@ xv11::ReturnType read_byte_from_serial()
 
 void write_pwm_value(float pwm)
 {
-  if (pwm < 0) {
-    gpio_led.write(true);
-  } else {
-    gpio_led.write(false);
-  }
   gpio_pwm.write(pwm);
 }
 
@@ -124,13 +120,27 @@ void fetch_timer_callback(rcl_timer_t* timer, int64_t last_call_time)
 
   xv11::DataPacket packet;
   while (lidar.process(&packet)) {
-    int const lidarAngle = packet.angle_quad;
+    size_t const offset        = 4 * packet.angle_quad;
+    float const  distanceScale = 1.0 / 1000.0f;
     for (int i = 0; i < 4; i++) {
-      distances[4 * lidarAngle + i] = (packet.distances[i] / 1000.0); // Distance to object in meters
+      distances[offset + i]   = distanceScale * packet.distances[i];
+      intensities[offset + i] = packet.signals[i];
     }
-    duration          = (packet.timestamp_us - last_timestamp_us) / 1000000.0;
+
+    duration          = (packet.timestamp_us - last_timestamp_us) / 1000000.0 / 4.0;
     last_timestamp_us = packet.timestamp_us;
   }
+}
+
+void pwm_timer_callback(rcl_timer_t* timer, int64_t last_call_time)
+{
+  RCLC_UNUSED(last_call_time);
+
+  if (timer == NULL) {
+    return;
+  }
+
+  lidar.apply_motor_pid();
 }
 
 void heartbeat_timer_callback(rcl_timer_t* timer, int64_t last_call_time)
@@ -147,6 +157,10 @@ void heartbeat_timer_callback(rcl_timer_t* timer, int64_t last_call_time)
 
 rcl_publisher_t             publisher;
 sensor_msgs__msg__LaserScan msg;
+rcl_publisher_t             publisher2;
+std_msgs__msg__String       msg2;
+float                       range_data[360];
+float                       intensity_data[360];
 void                        publish_timer_callback(rcl_timer_t* timer, int64_t last_call_time)
 {
   RCLC_UNUSED(last_call_time);
@@ -154,24 +168,29 @@ void                        publish_timer_callback(rcl_timer_t* timer, int64_t l
   if (timer == NULL) {
     return;
   }
+  auto oo1 = uart_lidar.get_queue_size();
 
-  static float data[360];
   rosidl_runtime_c__String__assign(&msg.header.frame_id, "lidar");
-  msg.ranges.data      = data;
-  msg.ranges.capacity  = 360;
-  msg.ranges.size      = 360;
-  msg.header.stamp.sec = sec++;
-  msg.angle_min        = 3.14 / 1;
-  msg.angle_max        = -3.14 / 1;
-  msg.angle_increment  = -2 * 3.14 / 360;
-  msg.time_increment   = duration;
-  msg.scan_time        = msg.time_increment * 360;
-  msg.range_min        = 0.15;
-  msg.range_max        = 6.0;
+  msg.ranges.data          = range_data;
+  msg.ranges.capacity      = 360;
+  msg.ranges.size          = 360;
+  msg.intensities.data     = intensity_data;
+  msg.intensities.capacity = 360;
+  msg.intensities.size     = 360;
+  msg.header.stamp.sec     = sec++;
+  msg.angle_min            = 3.14 / 1;
+  msg.angle_max            = -3.14 / 1;
+  msg.angle_increment      = -2 * 3.14 / 360;
+  msg.time_increment       = duration;
+  msg.scan_time            = msg.time_increment * 360;
+  msg.range_min            = 0.15;
+  msg.range_max            = 6.0;
 
   for (int i = 0; i < 360; i++) {
-    msg.ranges.data[i] = distances[i];
+    msg.ranges.data[i]      = distances[i];
+    msg.intensities.data[i] = intensities[i];
   }
+
   RCSOFTCHECK(rcl_publish(&publisher, &msg, NULL));
 }
 } // namespace
@@ -186,10 +205,13 @@ void error_loop()
 
 int main()
 {
-  uRosTransport trns(uart_ctrl, 115200);
+  uart_lidar.init(115200);
+
+  uRosTransport trns(uart_ctrl, 230400);
   rmw_uros_set_custom_transport(
     true, &trns, uRosTransport::open, uRosTransport::close, uRosTransport::write, uRosTransport::read
   );
+
   // Wait for agent successful ping for 2 minutes.
   auto ret = rmw_uros_ping_agent(Config::UROS_TIMEOUT_MS, Config::UROS_ATTEMPTS);
 
@@ -215,17 +237,22 @@ int main()
 
   // create publish_timer,
   rcl_timer_t        publish_timer;
-  const unsigned int publish_timer_timeout = 60.0 / Config::LIDAR_RPM * 1000 + 10;
+  const unsigned int publish_timer_timeout = 60.0 / Config::LIDAR_RPM * 1000;
   RCCHECK(rclc_timer_init_default(
     &publish_timer, &support, RCL_MS_TO_NS(publish_timer_timeout), publish_timer_callback
   ));
 
   // create fetch_timer,
   rcl_timer_t        fetch_timer;
-  const unsigned int fetch_timer_timeout = (60.0 / Config::LIDAR_RPM * 1000) / 90 * 5;
+  const unsigned int fetch_timer_timeout = 1;
   RCCHECK(
     rclc_timer_init_default(&fetch_timer, &support, RCL_MS_TO_NS(fetch_timer_timeout), fetch_timer_callback)
   );
+
+  // create pwm_timer,
+  rcl_timer_t        pwm_timer;
+  const unsigned int pwm_timer_timeout = 25;
+  RCCHECK(rclc_timer_init_default(&pwm_timer, &support, RCL_MS_TO_NS(pwm_timer_timeout), pwm_timer_callback));
 
   // create heartbeat_timer,
   rcl_timer_t        heartbeat_timer;
@@ -236,14 +263,15 @@ int main()
 
   // create executor
   rclc_executor_t executor;
-  RCCHECK(rclc_executor_init(&executor, &support.context, 3, &allocator));
+  RCCHECK(rclc_executor_init(&executor, &support.context, 4, &allocator));
   RCCHECK(rclc_executor_add_timer(&executor, &publish_timer));
   RCCHECK(rclc_executor_add_timer(&executor, &fetch_timer));
+  RCCHECK(rclc_executor_add_timer(&executor, &pwm_timer));
   RCCHECK(rclc_executor_add_timer(&executor, &heartbeat_timer));
 
   gpio_pwm.write(1.0f);
   while (true) {
-    RCSOFTCHECK(rclc_executor_spin_some(&executor, RCL_MS_TO_NS(10)));
+    RCSOFTCHECK(rclc_executor_spin_some(&executor, RCL_MS_TO_NS(0)));
   }
   return 0;
 }

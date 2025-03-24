@@ -20,7 +20,7 @@
 #include <stdint.h>
 
 #define XV11LIDAR_PACKET_SIZE 22
-#define LIDAR_SAMPLE_TIME_MS  100
+#define LIDAR_SAMPLE_TIME_MS  25.0f
 
 template<typename T, typename U>
 concept Component = requires(T t) {
@@ -31,8 +31,8 @@ namespace xv11 {
 struct DataPacket
 {
   uint32_t timestamp_us; // timestamp in microseconds
-  uint8_t  angle_quad;   // 0-89 for readings 0-4 356-359
-  uint16_t motor_rpm;    // speed in rpm
+  uint16_t angle_quad;   // 0-89 for readings 0-4 356-359
+  float    motor_rpm;    // speed in rpm
   uint16_t distances[4]; // flags and distance or error code
   uint16_t signals[4];   // signal strengths
 };
@@ -47,11 +47,11 @@ class Lidar
 {
 public:
   /* Setup */
-  Lidar(DataReader read_byte, PWMWriter write_pwm, TimestampGetter micros, float motor_rpm);
+  Lidar(DataReader read_byte, PWMWriter write_pwm, TimestampGetter micros, float target_motor_rpm);
 
   /* Cyclic */
   bool process(DataPacket* packet);
-  void apply_motor_pid(float motor_rpm);
+  void apply_motor_pid();
 
 private:
   /* IO */
@@ -61,15 +61,16 @@ private:
 
   /* Packet & Decoding */
   PacketBuffer m_packet;
-  uint32_t     m_packet_bytes;
   uint32_t     m_packet_timestamp_us;
+  uint32_t     m_packet_bytes;
 
   /* Motor control */
-  const float motor_rpm;
+  const float target_motor_rpm;
+  float       cur_motor_rpm     = 0.0f;
   uint32_t    last_process_time = 0;
-  float       cv                = 0.0f;
+  float       pwm_ratio         = 0.0f;
   using PIDType                 = decltype(mamePID::pi<float>(0.0, 0.0, LIDAR_SAMPLE_TIME_MS));
-  PIDType m_motor_pid           = mamePID::pi<float>(1.8, 0.00025, LIDAR_SAMPLE_TIME_MS, -255.0, 255.0);
+  PIDType m_motor_pid           = mamePID::pi<float>(1e-4, 1e-6, LIDAR_SAMPLE_TIME_MS, -1.0, 1.0);
 };
 } // namespace xv11
 

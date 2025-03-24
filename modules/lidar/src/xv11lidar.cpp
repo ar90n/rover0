@@ -32,7 +32,7 @@ inline uint16_t checksum(PacketBuffer const& data)
     chk32               = (chk32 << 1) + word;
   }
 
-  return (chk32 + (chk32 >> 15)) & 0x7FFF;
+  return ((chk32 & 0x7fff) + (chk32 >> 15)) & 0x7FFF;
 }
 
 inline void decodePacket(PacketBuffer const& data, uint32_t const timestamp_us, DataPacket* const packet)
@@ -66,46 +66,52 @@ inline bool is_valid_packet(PacketBuffer const& data)
 }
 } // namespace
 
-xv11::Lidar::Lidar(DataReader read_byte, PWMWriter write_pwm, TimestampGetter micros, float motor_rpm)
+xv11::Lidar::Lidar(DataReader read_byte, PWMWriter write_pwm, TimestampGetter micros, float target_motor_rpm)
   : m_read_byte(read_byte)
   , m_write_pwm(write_pwm)
   , m_micros(micros)
   , m_packet_bytes(0)
-  , motor_rpm(motor_rpm)
+  , target_motor_rpm(target_motor_rpm)
 {
 }
 
 bool xv11::Lidar::process(DataPacket* packet)
 {
-  while (m_packet_bytes < std::tuple_size<PacketBuffer>::value) {
-    const auto ret = m_read_byte();
-    if (!std::get<0>(ret)) {
-      break;
-    }
-    int byte = std::get<1>(ret);
+  bool has_data = false;
 
-    if (m_packet_bytes == 0) {
-      if (byte != StartByte) {
-        continue;
+  do {
+    has_data = false;
+    while (m_packet_bytes < std::tuple_size<PacketBuffer>::value) {
+      const auto ret = m_read_byte();
+      if (!std::get<0>(ret)) {
+        break;
       }
+      int byte = std::get<1>(ret);
 
-      m_packet_timestamp_us = m_micros();
-    }
-    m_packet[m_packet_bytes++] = byte;
-  }
+      if (m_packet_bytes == 0) {
+        if (byte != StartByte) {
+          continue;
+        }
 
-  if (m_packet_bytes == std::tuple_size<PacketBuffer>::value) {
-    m_packet_bytes = 0;
-    if (is_valid_packet(m_packet)) {
-      decodePacket(m_packet, m_packet_timestamp_us, packet);
-      apply_motor_pid(packet->motor_rpm);
-      return true;
+        m_packet_timestamp_us = m_micros();
+      }
+      m_packet[m_packet_bytes++] = byte;
     }
-  }
+
+    if (m_packet_bytes == std::tuple_size<PacketBuffer>::value) {
+      has_data       = true;
+      m_packet_bytes = 0;
+      if (is_valid_packet(m_packet)) {
+        decodePacket(m_packet, m_packet_timestamp_us, packet);
+        cur_motor_rpm = packet->motor_rpm;
+        return true;
+      }
+    }
+  } while (has_data);
   return false;
 }
 
-void xv11::Lidar::apply_motor_pid(float const pv)
+void xv11::Lidar::apply_motor_pid()
 {
   const auto cur_time    = m_micros();
   const auto duration_ms = (cur_time - last_process_time) / 1000;
@@ -114,7 +120,7 @@ void xv11::Lidar::apply_motor_pid(float const pv)
   }
   last_process_time = cur_time;
 
-  auto const ret  = m_motor_pid.calculate(motor_rpm, pv);
-  cv             += ret / 255.0;
-  m_write_pwm(cv);
+  auto const delta = m_motor_pid.calculate(target_motor_rpm, cur_motor_rpm);
+  pwm_ratio        = std::clamp(pwm_ratio + delta, 0.8f, 0.95f); // pwm ratio should be 0.8f ~ 0.95f
+  m_write_pwm(pwm_ratio);
 }
