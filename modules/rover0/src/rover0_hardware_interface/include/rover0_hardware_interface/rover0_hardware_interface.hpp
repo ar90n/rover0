@@ -88,7 +88,7 @@ namespace rover0_hardware_interface
             std::string rear_left_wheel_joint_name{"rear_left_wheel_joint"};
             std::string rear_right_wheel_joint_name{"rear_right_wheel_joint"};
             std::string imu_sensor_name{"imu_sensor"};
-            std::string serial_port{"/dev/ttyUSB0"};
+            std::string serial_port{"/dev/serial0"};
             int16_t encoder_tics_per_revolution{64};
         };
 

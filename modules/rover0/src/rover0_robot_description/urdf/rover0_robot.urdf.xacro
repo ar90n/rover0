@@ -11,7 +11,7 @@
   <xacro:rover0_ros2_control name="Rover0" prefix="$(arg prefix)">
     <xacro:property name="hardware_system">
       <plugin>rover0_hardware_interface/Rover0HardwareInterface</plugin>
-      <param name="serial_port">/dev/ttyUSB0</param>
+      <param name="serial_port">/dev/serial0</param>
       <param name="encoder_tics_per_revolution">64</param>
       <param name="imu_linear_acceleration_offset_x">-0.04001879692077637</param>
       <param name="imu_linear_acceleration_offset_y">-0.011276155710220337</param>
