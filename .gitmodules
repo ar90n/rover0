@@ -4,3 +4,6 @@
 [submodule "modules/teleop/src/thirdparty/camera_ros"]
 	path = modules/teleop/src/thirdparty/camera_ros
 	url = git@github.com:christianrauch/camera_ros.git
+[submodule "modules/uros-agent-lidar/src/thirdparty/micro-ROS-Agent"]
+	path = modules/uros-agent-lidar/src/thirdparty/micro-ROS-Agent
+	url = git@github.com:micro-ROS/micro-ROS-Agent.git
