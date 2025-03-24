@@ -8,7 +8,8 @@
 #include <stdexcept>
 #include <utility>
 
-template <typename T, size_t Size> class FixedSizeQueue {
+template <typename T, size_t Size>
+class FixedSizeQueue {
 public:
   ~FixedSizeQueue() {
     while (!empty()) {
@@ -17,17 +18,12 @@ public:
   }
 
   bool push(T const &value) {
-    if (full_flag) {
+    if (count == Size) {  // キューが満杯かどうかは count で判断
       return false;
     }
-
     new (get(tail)) T(std::move(value));
     tail = (tail + 1) % Size;
-    if (tail == head) {
-      full_flag = true;
-    }
     ++count;
-
     return true;
   }
 
@@ -38,15 +34,12 @@ public:
     std::optional<T> result(*get(head));
     get(head)->~T();
     head = (head + 1) % Size;
-    full_flag = false;
     --count;
     return result;
   }
 
   bool empty() const { return count == 0; }
-
-  bool full() const { return full_flag; }
-
+  bool full() const { return count == Size; }
   size_t size() const { return count; }
 
 private:
@@ -54,12 +47,10 @@ private:
   size_t head = 0;
   size_t tail = 0;
   size_t count = 0;
-  bool full_flag = false;
 
   T *get(size_t index) {
     return std::launder(reinterpret_cast<T *>(&data[index * sizeof(T)]));
   }
-
   const T *get(size_t index) const {
     return std::launder(reinterpret_cast<const T *>(&data[index * sizeof(T)]));
   }
