@@ -18,6 +18,8 @@ services:
     volumes:
       - /run/udev
       - ./modules:/modules
+    devices:
+      - ${MOTOR_SERIAL_PORT:?err}
     working_dir: /modules/rover0
     environment:
       <<: *environment
@@ -55,7 +57,6 @@ services:
       - /dev/video22
       - /dev/video23
       - /dev/video31
-      - ${MOTOR_SERIAL_PORT:?err}
     ports:
       - "${FOXGLOVE_WS_PORT:-8765}:${FOXGLOVE_WS_PORT:-8765}"
     working_dir: /modules/teleop
