@@ -168,7 +168,6 @@ void                        publish_timer_callback(rcl_timer_t* timer, int64_t l
   if (timer == NULL) {
     return;
   }
-  auto oo1 = uart_lidar.get_queue_size();
 
   rosidl_runtime_c__String__assign(&msg.header.frame_id, "lidar");
   msg.ranges.data          = range_data;
