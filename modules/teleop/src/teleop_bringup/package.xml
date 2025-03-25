@@ -10,7 +10,9 @@
   <buildtool_depend>ament_cmake_auto</buildtool_depend>
 
   <exec_depend>ros_camera</exec_depend>
+  <exec_depend>ffmpeg_image_transport</exec_depend>
   <exec_depend>foxglove_bridge</exec_depend>
+  <exec_depend>foxglove_compressed_video_transport</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

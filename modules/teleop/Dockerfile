@@ -32,7 +32,7 @@ FROM ros:jazzy-ros-base-noble
 RUN usermod -aG video root
 
 RUN apt update  && \
-    apt install -y libjpeg8 libtiff6 libpng16-16 libexif12 libboost-program-options1.83.0 && \
+    apt install -y libjpeg8 libtiff6 libpng16-16 libexif12 libboost-program-options1.83.0 ffmpeg && \
     apt clean
 
 COPY --from=builder /usr/local/bin/* /usr/local/bin/

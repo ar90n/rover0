@@ -69,8 +69,25 @@ def generate_launch_description():
         name='camera',
         output="both",
         parameters=[camera_params_file, {'camera_info_url': camera_calibration_file}],
-        #parameters=[('camera_info_url', camera_calibration_file)],
     )
+
+    #image_transport_node = Node(
+    #    package='image_transport',
+    #    executable='republish',
+    #    name='video_republisher',
+    #    parameters=[
+    #        {'out.foxglove.encoding': 'h264_v4l2m2m'},
+    #        {'out.foxglove.gop_size': 1},
+    #        {'out.foxglove.bit_rate': 4000000},
+    #        {'out.foxglove.pixel_format': 'yuv420p'},
+    #        {'out_transport': 'foxglove'},
+    #    ],
+    #    arguments=['raw', 'foxglove'],
+    #    remappings=[
+    #        ('in', '/camera/image_raw'),
+    #        ('out', '/camera/image_h264'),
+    #    ],
+    #)
 
     foxglove_bridge_node = IncludeLaunchDescription(
         XMLLaunchDescriptionSource(
