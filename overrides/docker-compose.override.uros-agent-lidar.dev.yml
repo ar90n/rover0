@@ -1,0 +1,6 @@
+services:
+  uros-agent-lidar-dev:
+    image: rover0/uros-agent-lidar:dev
+    build:
+      target: dev
+    container_name: uros-agent-lidar-dev

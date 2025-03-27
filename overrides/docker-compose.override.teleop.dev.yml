@@ -1,0 +1,6 @@
+services:
+  teleop:
+    image: rover0/teleop:dev
+    build:
+      target: dev
+    container_name: teleop-dev

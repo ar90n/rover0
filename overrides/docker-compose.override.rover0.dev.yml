@@ -1,0 +1,6 @@
+services:
+  rover0:
+    image: rover0/rover0:dev
+    build:
+      target: dev
+    container_name: rover0-dev

@@ -1,5 +1,3 @@
-version: "3.9"
-
 x-base: &base
   restart: always
 
@@ -12,7 +10,8 @@ services:
     <<: *base
     image: rover0/rover0
     build:
-      context: modules/rover0
+      context: modules
+      dockerfile: rover0/Dockerfile
     container_name: rover0
     ipc: host
     volumes:
@@ -27,7 +26,8 @@ services:
     <<: *base
     image: rover0/teleop
     build:
-      context: modules/teleop
+      context: modules
+      dockerfile: teleop/Dockerfile
     container_name: teleop
     ipc: host
     volumes:
@@ -58,6 +58,7 @@ services:
       - /dev/video22
       - /dev/video23
       - /dev/video31
+    privileged: true
     ports:
       - "${FOXGLOVE_WS_PORT:-8765}:${FOXGLOVE_WS_PORT:-8765}"
     working_dir: /modules/teleop
@@ -68,7 +69,8 @@ services:
     <<: *base
     image: rover0/uros-agent-lidar
     build:
-      context: modules/uros-agent-lidar
+      context: modules
+      dockerfile: uros-agent-lidar/Dockerfile
     container_name: uros-agent-lidar
     ipc: host
     volumes:
