@@ -1,7 +1,7 @@
 FROM ros:jazzy-ros-base-noble as base
 
 ENV DEBIAN_FRONTEND=noninteractive
-RUN usermod -aG video root
+RUN usermod -aG dialout root
 
 FROM base AS dev
 
