@@ -10,7 +10,7 @@ RUN --mount=type=cache,target=/var/lib/apt,sharing=locked \
     --mount=type=bind,source=./rover0/src,target=/tmp/modules/rover0/src \
     apt-get update && \
     rosdep update && \
-    rosdep install -y -r --from-paths /tmp/modules/rover0/src
+    rosdep install -y -r --from-paths /tmp/modules/rover0/src -t build -t buildtool -t exec
 
 ENTRYPOINT ["tail", "-f", "/dev/null"]
 

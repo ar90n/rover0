@@ -11,7 +11,7 @@ RUN --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update && \
     apt-get install -y ffmpeg python3-pip git python3-jinja2 libboost-dev libgnutls28-dev openssl libtiff-dev pybind11-dev cmake pkg-config python3-yaml python3-ply ninja-build libjpeg-dev libpng-dev libboost-program-options-dev libexif-dev ninja-build && \
     rosdep update && \
-    rosdep install -y -r --from-paths /tmp/modules/teleop/src --skip-keys libcamera
+    rosdep install -y -r --from-paths /tmp/modules/teleop/src --skip-keys libcamera -t build -t buildtool -t exec
 
 RUN pip3 install meson --break-system-packages
 

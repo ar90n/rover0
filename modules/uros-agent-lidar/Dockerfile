@@ -11,7 +11,7 @@ RUN --mount=type=cache,target=/var/lib/apt,sharing=locked \
     . "/opt/ros/$ROS_DISTRO/setup.sh" && \
     apt-get update && \
     rosdep update && \
-    rosdep install -y -r --from-paths /tmp/modules/uros-agent-lidar/src
+    rosdep install -y -r --from-paths /tmp/modules/uros-agent-lidar/src -t build -t buildtool -t exec
 
 ENTRYPOINT ["tail", "-f", "/dev/null"]
 
