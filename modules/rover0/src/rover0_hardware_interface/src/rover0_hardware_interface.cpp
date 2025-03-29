@@ -147,13 +147,15 @@ void rover0_hardware_interface::IMUState::update(message::ImuData param, int16_t
 
 double rover0_hardware_interface::IMUState::calc_linear_acceleration(int16_t value, double offset) const
 {
-    static constexpr double acc_coef{2 * 2.0 / 65536.0};
+    static constexpr double gravity_acceleration{9.81};
+    static constexpr double acc_coef{gravity_acceleration * 2 * 2.0 / 65536.0};
     return acc_coef * static_cast<double>(value) - offset;
 }
 
 double rover0_hardware_interface::IMUState::calc_angular_velocity(int16_t value, double offset) const
 {
-    static constexpr double gyro_coef{2 * 250 / 65536.0};
+    static constexpr double deg_to_rad{std::numbers::pi / 180.0};
+    static constexpr double gyro_coef{deg_to_rad * 2 * 250 / 65536.0};
     return gyro_coef * static_cast<double>(value) - offset;
 }
 
