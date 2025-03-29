@@ -28,10 +28,11 @@ add_subdirectory(${COMMON_DIR} ${CMAKE_BINARY_DIR}/common)
 add_executable(rover0-lidar
     ${SRC_DIR}/main.cpp
     ${SRC_DIR}/xv11lidar.cpp
+    ${SRC_DIR}/comm.cpp
 )
 
 # Link the target with the Pico standard library and micro-ROS
-target_link_libraries(rover0-lidar common::common pico_stdlib hardware_pwm hardware_uart ${MICRO_ROS_PATH}/libmicroros.a)
+target_link_libraries(rover0-lidar common::common pico_stdlib hardware_pwm hardware_uart pico_async_context_poll pico_multicore ${MICRO_ROS_PATH}/libmicroros.a)
 
 # Set target properties for the rover0-lidar executable
 set_target_properties(rover0-lidar PROPERTIES

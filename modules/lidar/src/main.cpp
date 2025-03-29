@@ -17,8 +17,10 @@
 #include "hardware/uart.h"
 #include "transport.hpp"
 #include "uart.hpp"
+#include "config.hpp"
 #include "xv11lidar.h"
 #include <pico/stdlib.h>
+#include <pico/multicore.h>
 
 #include "pico/stdlib.h"
 #include <time.h>
@@ -54,23 +56,6 @@ extern "C"
     }                                                                                                        \
   } while (0)
 
-struct Config
-{
-  static constexpr uint LED_PIN             = 25;
-  static constexpr uint PWM_PIN             = 7;
-  static constexpr uint UART_LIDAR          = 1;
-  static constexpr uint UART_LIDAR_TX_PIN   = 0;
-  static constexpr uint UART_LIDAR_RX_PIN   = 1;
-  static constexpr uint UART_CONTROL        = 0;
-  static constexpr uint UART_CONTROL_TX_PIN = 4;
-  static constexpr uint UART_CONTROL_RX_PIN = 5;
-  static constexpr uint UART_BUFFER_SIZE    = 1024;
-  static constexpr uint ROS_DOMAIN_ID       = 104;
-  static constexpr uint LIDAR_RPM           = 270;
-  static constexpr uint UROS_TIMEOUT_MS     = 1000;
-  static constexpr uint UROS_ATTEMPTS       = 120;
-};
-
 using UartControl = Uart<
   Config::UART_LIDAR,
   Config::UART_CONTROL_TX_PIN,
@@ -78,14 +63,12 @@ using UartControl = Uart<
   Config::UART_BUFFER_SIZE>;
 using UartLidar =
   Uart<Config::UART_CONTROL, Config::UART_LIDAR_RX_PIN, Config::UART_LIDAR_RX_PIN, Config::UART_BUFFER_SIZE>;
-using GpioLED       = Gpio<Config::LED_PIN>;
 using GpioPWM       = Gpio<Config::PWM_PIN, GPIO_FUNC_PWM>;
 using uRosTransport = UartTransport<UartControl>;
 
 auto uart_lidar = UartLidar::instance();
 auto uart_ctrl  = UartControl::instance();
-auto gpio_led   = GpioLED::instance();
-auto gpio_pwm   = GpioPWM::instance();
+auto gpio_pwm = GpioPWM::instance();
 
 namespace {
 float      distances[360];
@@ -143,17 +126,8 @@ void pwm_timer_callback(rcl_timer_t* timer, int64_t last_call_time)
   lidar.apply_motor_pid();
 }
 
-void heartbeat_timer_callback(rcl_timer_t* timer, int64_t last_call_time)
-{
-  RCLC_UNUSED(last_call_time);
-  if (timer == NULL) {
-    return;
-  }
-
-  static bool led_state = false;
-  gpio_led.write(led_state);
-  led_state = !led_state;
-}
+// Core1 entry function declaration (defined in comm.cpp)
+extern "C" void comm_main();
 
 rcl_publisher_t             publisher;
 sensor_msgs__msg__LaserScan msg;
@@ -204,6 +178,10 @@ void error_loop()
 
 int main()
 {
+  // Launch Core1 for LiDAR control
+  sleep_ms(1000);
+  multicore_launch_core1(comm_main);
+
   uart_lidar.init(115200);
 
   uRosTransport trns(uart_ctrl, 230400);
@@ -243,34 +221,26 @@ int main()
 
   // create fetch_timer,
   rcl_timer_t        fetch_timer;
-  const unsigned int fetch_timer_timeout = 1;
+  const unsigned int fetch_timer_timeout = 10;
   RCCHECK(
     rclc_timer_init_default(&fetch_timer, &support, RCL_MS_TO_NS(fetch_timer_timeout), fetch_timer_callback)
   );
 
   // create pwm_timer,
   rcl_timer_t        pwm_timer;
-  const unsigned int pwm_timer_timeout = 25;
+  const unsigned int pwm_timer_timeout = 50;
   RCCHECK(rclc_timer_init_default(&pwm_timer, &support, RCL_MS_TO_NS(pwm_timer_timeout), pwm_timer_callback));
-
-  // create heartbeat_timer,
-  rcl_timer_t        heartbeat_timer;
-  const unsigned int heartbeat_timeout = 500;
-  RCCHECK(rclc_timer_init_default(
-    &heartbeat_timer, &support, RCL_MS_TO_NS(heartbeat_timeout), heartbeat_timer_callback
-  ));
 
   // create executor
   rclc_executor_t executor;
-  RCCHECK(rclc_executor_init(&executor, &support.context, 4, &allocator));
+  RCCHECK(rclc_executor_init(&executor, &support.context, 3, &allocator));
   RCCHECK(rclc_executor_add_timer(&executor, &publish_timer));
   RCCHECK(rclc_executor_add_timer(&executor, &fetch_timer));
   RCCHECK(rclc_executor_add_timer(&executor, &pwm_timer));
-  RCCHECK(rclc_executor_add_timer(&executor, &heartbeat_timer));
 
   gpio_pwm.write(1.0f);
   while (true) {
-    RCSOFTCHECK(rclc_executor_spin_some(&executor, RCL_MS_TO_NS(0)));
+    RCSOFTCHECK(rclc_executor_spin_some(&executor, RCL_MS_TO_NS(5)));
   }
   return 0;
 }
