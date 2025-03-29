@@ -1,7 +1,5 @@
 #include "config.hpp"
 #include "gpio.hpp"
-#include "pico/async_context.h"
-#include "pico/async_context_poll.h"
 #include "pico/multicore.h"
 #include "pico/stdlib.h"
 #include "task.hpp"
@@ -22,12 +20,11 @@ void comm_entry()
 {
   multicore_fifo_clear_irq();
 
-  async_context_poll_t async_context;
-  async_context_poll_init_with_defaults(&async_context);
+  TaskContext task_context;
+  
+  schedule_task<500>(task_context, heartbeat_task);
 
-  invoke_as_task<500>(async_context, heartbeat_task);
-
-  poll(async_context);
+  run_task_loop(task_context, 10); // Explicitly set 10ms poll interval
 }
 
 } // namespace
