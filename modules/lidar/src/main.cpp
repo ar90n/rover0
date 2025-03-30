@@ -12,15 +12,16 @@
 #include <sensor_msgs/msg/laser_scan.h>
 #include <std_msgs/msg/int32.h>
 
+#include "buffered_intercore_fifo.hpp"
+#include "config.hpp"
 #include "gpio.hpp"
 #include "hardware/pwm.h"
 #include "hardware/uart.h"
 #include "transport.hpp"
 #include "uart.hpp"
-#include "config.hpp"
 #include "xv11lidar.h"
-#include <pico/stdlib.h>
 #include <pico/multicore.h>
+#include <pico/stdlib.h>
 
 #include "pico/stdlib.h"
 #include <time.h>
@@ -66,9 +67,8 @@ using UartLidar =
 using GpioPWM       = Gpio<Config::PWM_PIN, GPIO_FUNC_PWM>;
 using uRosTransport = UartTransport<UartControl>;
 
-auto uart_lidar = UartLidar::instance();
-auto uart_ctrl  = UartControl::instance();
-auto gpio_pwm = GpioPWM::instance();
+auto uart_ctrl      = UartControl::instance();
+auto intercore_fifo = BufferedIntercoreFIFO<Config::INTERCORE_FIOF_SIZE>::instance();
 
 namespace {
 float      distances[360];
@@ -78,22 +78,8 @@ uint32_t   last_timestamp_us = 0;
 static int sec               = 0;
 float      duration          = 0;
 
-xv11::ReturnType read_byte_from_serial()
-{
-  if (!uart_lidar.has_data()) {
-    return std::make_pair(false, static_cast<uint8_t>(0));
-  }
-  return std::make_pair(true, uart_lidar.read());
-}
-
-void write_pwm_value(float pwm)
-{
-  gpio_pwm.write(pwm);
-}
-
-xv11::Lidar lidar(read_byte_from_serial, write_pwm_value, time_us_32, Config::LIDAR_RPM);
-
-void fetch_timer_callback(rcl_timer_t* timer, int64_t last_call_time)
+// Function to receive LiDAR data from Core1 via FIFO
+void lidar_receive_task(rcl_timer_t* timer, int64_t last_call_time)
 {
   RCLC_UNUSED(last_call_time);
 
@@ -101,29 +87,57 @@ void fetch_timer_callback(rcl_timer_t* timer, int64_t last_call_time)
     return;
   }
 
-  xv11::DataPacket packet;
-  while (lidar.process(&packet)) {
-    size_t const offset        = 4 * packet.angle_quad;
+  // Check if there's data in the FIFO
+  while (6 <= intercore_fifo.size()) {
+    // Read the first word: angle_quad (16 bits) + first distance (16 bits)
+    uint32_t word1      = intercore_fifo.read();
+    uint16_t angle_quad = word1 >> 16;
+    uint16_t distance1  = word1 & 0xFFFF;
+
+    // Read the second word: second distance (16 bits) + third distance (16 bits)
+    uint32_t word2     = intercore_fifo.read();
+    uint16_t distance2 = word2 >> 16;
+    uint16_t distance3 = word2 & 0xFFFF;
+
+    // Read the third word: fourth distance (16 bits) + first intensity (16 bits)
+    uint32_t word3      = intercore_fifo.read();
+    uint16_t distance4  = word3 >> 16;
+    uint16_t intensity1 = word3 & 0xFFFF;
+
+    // Read the fourth word: second intensity (16 bits) + third intensity (16 bits)
+    uint32_t word4      = intercore_fifo.read();
+    uint16_t intensity2 = word4 >> 16;
+    uint16_t intensity3 = word4 & 0xFFFF;
+
+    // Read the fifth word: fourth intensity (16 bits)
+    uint32_t word5      = intercore_fifo.read();
+    uint16_t intensity4 = word5 >> 16;
+
+    // Read the sixth word: timestamp (32 bits)
+    uint32_t word6        = intercore_fifo.read();
+    uint32_t timestamp_us = word6;
+
+    // Calculate offset in the arrays
+    size_t const offset        = (4 * angle_quad) % 360;
     float const  distanceScale = 1.0 / 1000.0f;
-    for (int i = 0; i < 4; i++) {
-      distances[offset + i]   = distanceScale * packet.distances[i];
-      intensities[offset + i] = packet.signals[i];
+
+    // Store the data in the arrays
+    distances[offset]     = distanceScale * distance1;
+    distances[offset + 1] = distanceScale * distance2;
+    distances[offset + 2] = distanceScale * distance3;
+    distances[offset + 3] = distanceScale * distance4;
+
+    intensities[offset]     = intensity1;
+    intensities[offset + 1] = intensity2;
+    intensities[offset + 2] = intensity3;
+    intensities[offset + 3] = intensity4;
+
+    // Calculate duration for time_increment
+    if (last_timestamp_us > 0) {
+      duration = (timestamp_us - last_timestamp_us) / 1000000.0 / 4.0;
     }
-
-    duration          = (packet.timestamp_us - last_timestamp_us) / 1000000.0 / 4.0;
-    last_timestamp_us = packet.timestamp_us;
+    last_timestamp_us = timestamp_us;
   }
-}
-
-void pwm_timer_callback(rcl_timer_t* timer, int64_t last_call_time)
-{
-  RCLC_UNUSED(last_call_time);
-
-  if (timer == NULL) {
-    return;
-  }
-
-  lidar.apply_motor_pid();
 }
 
 // Core1 entry function declaration (defined in comm.cpp)
@@ -176,13 +190,15 @@ void error_loop()
   }
 }
 
+extern Gpio<Config::LED_PIN> gpio_led;
+
 int main()
 {
+  intercore_fifo.init();
+
   // Launch Core1 for LiDAR control
   sleep_ms(1000);
   multicore_launch_core1(comm_main);
-
-  uart_lidar.init(115200);
 
   uRosTransport trns(uart_ctrl, 230400);
   rmw_uros_set_custom_transport(
@@ -219,28 +235,21 @@ int main()
     &publish_timer, &support, RCL_MS_TO_NS(publish_timer_timeout), publish_timer_callback
   ));
 
-  // create fetch_timer,
-  rcl_timer_t        fetch_timer;
-  const unsigned int fetch_timer_timeout = 10;
-  RCCHECK(
-    rclc_timer_init_default(&fetch_timer, &support, RCL_MS_TO_NS(fetch_timer_timeout), fetch_timer_callback)
-  );
-
-  // create pwm_timer,
-  rcl_timer_t        pwm_timer;
-  const unsigned int pwm_timer_timeout = 50;
-  RCCHECK(rclc_timer_init_default(&pwm_timer, &support, RCL_MS_TO_NS(pwm_timer_timeout), pwm_timer_callback));
+  // create lidar_receive_timer
+  rcl_timer_t        lidar_receive_timer;
+  const unsigned int lidar_receive_timeout = 5; // Check more frequently for FIFO data
+  RCCHECK(rclc_timer_init_default(
+    &lidar_receive_timer, &support, RCL_MS_TO_NS(lidar_receive_timeout), lidar_receive_task
+  ));
 
   // create executor
   rclc_executor_t executor;
-  RCCHECK(rclc_executor_init(&executor, &support.context, 3, &allocator));
+  RCCHECK(rclc_executor_init(&executor, &support.context, 2, &allocator));
   RCCHECK(rclc_executor_add_timer(&executor, &publish_timer));
-  RCCHECK(rclc_executor_add_timer(&executor, &fetch_timer));
-  RCCHECK(rclc_executor_add_timer(&executor, &pwm_timer));
+  RCCHECK(rclc_executor_add_timer(&executor, &lidar_receive_timer));
 
-  gpio_pwm.write(1.0f);
   while (true) {
-    RCSOFTCHECK(rclc_executor_spin_some(&executor, RCL_MS_TO_NS(5)));
+    RCSOFTCHECK(rclc_executor_spin_some(&executor, RCL_MS_TO_NS(1)));
   }
   return 0;
 }
