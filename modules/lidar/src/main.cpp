@@ -1,27 +1,26 @@
+#include <time.h>
 #include <rcl/rcl.h>
 #include <rclc/executor.h>
 #include <rclc/rclc.h>
 #include <rmw_microros/rmw_microros.h>
-
 #include <rosidl_runtime_c/string.h>
 #include <rosidl_runtime_c/string_functions.h>
 #include <std_msgs/msg/string.h>
-
 #include <sensor_msgs/msg/laser_scan.h>
 #include <std_msgs/msg/int32.h>
 
+#include <pico/multicore.h>
+#include <pico/stdlib.h>
+
 #include "buffered_intercore_fifo.hpp"
 #include "config.hpp"
+#include "device.hpp"
 #include "gpio.hpp"
 #include "hardware/pwm.h"
 #include "hardware/uart.h"
 #include "transport.hpp"
 #include "uart.hpp"
 #include "xv11lidar.h"
-#include <pico/multicore.h>
-#include <pico/stdlib.h>
-
-#include <time.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -55,18 +54,10 @@ extern "C"
     }                                                                                                        \
   } while (0)
 
-using UartControl = Uart<
-  Config::UART_LIDAR,
-  Config::UART_CONTROL_TX_PIN,
-  Config::UART_CONTROL_RX_PIN,
-  Config::UART_BUFFER_SIZE>;
-using UartLidar =
-  Uart<Config::UART_CONTROL, Config::UART_LIDAR_RX_PIN, Config::UART_LIDAR_RX_PIN, Config::UART_BUFFER_SIZE>;
-using GpioPWM       = Gpio<Config::PWM_PIN, GPIO_FUNC_PWM>;
-using uRosTransport = UartTransport<UartControl>;
+using uRosTransport = UartTransport<device::UartControl>;
 
-auto uart_ctrl      = UartControl::instance();
-auto intercore_fifo = BufferedIntercoreFIFO<Config::INTERCORE_FIOF_SIZE>::instance();
+auto uart_ctrl      = device::UartControl::instance();
+auto intercore_fifo = device::Core0IntercoreFIFO::instance();
 
 namespace {
 float      distances[360];
@@ -142,8 +133,6 @@ extern "C" void comm_main();
 
 rcl_publisher_t             publisher;
 sensor_msgs__msg__LaserScan msg;
-rcl_publisher_t             publisher2;
-std_msgs__msg__String       msg2;
 float                       range_data[360];
 float                       intensity_data[360];
 void                        publish_timer_callback(rcl_timer_t* timer, int64_t last_call_time)

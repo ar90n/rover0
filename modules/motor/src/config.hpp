@@ -29,7 +29,7 @@ struct Config
   static constexpr uint  EMERGENCY_WORKER_INTERVAL_MS     = 10;
   static constexpr uint  LED_HEARTBEAT_WORKER_INTERVAL_MS = 500;
   static constexpr uint  MOTOR_CONTROL_WORKER_INTERVAL_MS = 10;
-  static constexpr uint  IMU_CONTROL_WORKER_INTERVAL_MS   = 5;
+  static constexpr uint  IMU_CONTROL_WORKER_INTERVAL_MS   = 20;
   static constexpr uint  INTERCORE_FIFO_SIZE              = 128;
   static constexpr uint  QUEUE_SIZE                       = 128;
   static constexpr float MOTOR_DRIVER_PID_KP              = 0.2;

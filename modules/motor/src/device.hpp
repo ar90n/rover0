@@ -23,13 +23,13 @@ using FrontLeftMotor =
   Motor<Config::FRONT_LEFT_FORWARD_PIN, Config::FRONT_LEFT_BACKWARD_PIN, FrontLeftRotaryEncoder>;
 using FrontRightMotor =
   Motor<Config::FRONT_RIGHT_FORWARD_PIN, Config::FRONT_RIGHT_BACKWARD_PIN, FrontRightRotaryEncoder>;
-using IMU           = imu::IMU_6050<Config::I2C_IMU, Config::I2C_IMU_SDA, Config::I2C_IMU_SCL>;
+using IMU                = imu::IMU_6050<Config::I2C_IMU, Config::I2C_IMU_SDA, Config::I2C_IMU_SCL>;
 using Core0IntercoreFIFO = BufferedIntercoreFIFO<0, Config::INTERCORE_FIFO_SIZE>;
 using Core1IntercoreFIFO = BufferedIntercoreFIFO<1, Config::INTERCORE_FIFO_SIZE>;
-using UartControl   = Uart<
-    Config::UART_CONTROL,
-    Config::UART_CONTROL_TX_PIN,
-    Config::UART_CONTROL_RX_PIN,
-    Config::UART_BUFFER_SIZE>;
+using UartControl        = Uart<
+         Config::UART_CONTROL,
+         Config::UART_CONTROL_TX_PIN,
+         Config::UART_CONTROL_RX_PIN,
+         Config::UART_BUFFER_SIZE>;
 
 } // namespace device
