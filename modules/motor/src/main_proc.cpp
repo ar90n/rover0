@@ -24,6 +24,7 @@ auto motor_rear_right  = device::RearRightMotor::instance();
 auto motor_front_left  = device::FrontLeftMotor::instance();
 auto motor_front_right = device::FrontRightMotor::instance();
 auto imu_              = device::IMU::instance();
+auto intercore_fifo    = device::Core0IntercoreFIFO::instance();
 
 struct IMUStore
 {
@@ -72,11 +73,11 @@ void push_msg(T const& msg)
 
 std::optional<message::RxMsg> pop_rx_msg()
 {
-  if (!multicore_fifo_rvalid()) {
+  if (!intercore_fifo.has_data()) {
     return std::nullopt;
   }
 
-  uint32_t const bytes{ multicore_fifo_pop_blocking() };
+  uint32_t const bytes{ intercore_fifo.read() };
   return message::parse_rx_msg(bytes);
 }
 
@@ -240,6 +241,7 @@ namespace main_proc {
 int run()
 {
   ::imu_.init(Config::I2C_IMU_BAUDRATE);
+  ::intercore_fifo.init();
 
   async_context_poll_t context;
   async_context_poll_init_with_defaults(&context);

@@ -5,12 +5,12 @@
 #include "hardware/irq.h"
 #include "queue.hpp"
 
-template <int N> class BufferedIntercoreFIFO {
+template <int M, int N> class BufferedIntercoreFIFO {
 public:
   enum class State { CREATED, INITIALIZED, CLOSED };
 
   inline static BufferedIntercoreFIFO &instance() {
-    static BufferedIntercoreFIFO<N> instance;
+    static BufferedIntercoreFIFO<M, N> instance;
     return instance;
   }
 
@@ -64,14 +64,12 @@ private:
     multicore_fifo_clear_irq();
   }
 
-  static uint32_t irq() {
-    if (get_core_num() == 0) {
-        return SIO_IRQ_PROC0;
-    } else {
-        return SIO_IRQ_PROC1;
-    }
+  constexpr static uint irq() {
+    static_assert(M == 0 || M == 1, "Invalid UART instance");
+    uint vs[] = {SIO_IRQ_PROC0, SIO_IRQ_PROC1};
+    return vs[M];
   }
 };
 
-template <int N>
-FixedSizeQueue<uint32_t, N> BufferedIntercoreFIFO<N>::queue{};
+template <int M, int N>
+FixedSizeQueue<uint32_t, N> BufferedIntercoreFIFO<M, N>::queue{};
