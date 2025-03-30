@@ -60,6 +60,8 @@ private:
     while (multicore_fifo_rvalid()) {
       queue.push(multicore_fifo_pop_blocking());
     }
+
+    multicore_fifo_clear_irq();
   }
 
   static uint32_t irq() {
