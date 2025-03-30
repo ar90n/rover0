@@ -6,7 +6,6 @@
 #include "task.hpp"
 #include "uart.hpp"
 #include "xv11lidar.h"
-#include <stdio.h>
 
 namespace {
 using GpioPWM = Gpio<Config::PWM_PIN, GPIO_FUNC_PWM>;

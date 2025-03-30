@@ -1,5 +1,3 @@
-#include <stdio.h>
-
 #include <rcl/rcl.h>
 #include <rclc/executor.h>
 #include <rclc/rclc.h>
@@ -23,7 +21,6 @@
 #include <pico/multicore.h>
 #include <pico/stdlib.h>
 
-#include "pico/stdlib.h"
 #include <time.h>
 
 #ifdef __cplusplus
@@ -54,6 +51,7 @@ extern "C"
   do {                                                                                                       \
     rcl_ret_t temp_rc = fn;                                                                                  \
     if ((temp_rc != RCL_RET_OK)) {                                                                           \
+      /* Log or handle error if needed in the future */                                                      \
     }                                                                                                        \
   } while (0)
 
@@ -73,7 +71,6 @@ auto intercore_fifo = BufferedIntercoreFIFO<Config::INTERCORE_FIOF_SIZE>::instan
 namespace {
 float      distances[360];
 float      intensities[360];
-uint32_t   distances_index   = 0;
 uint32_t   last_timestamp_us = 0;
 static int sec               = 0;
 float      duration          = 0;
