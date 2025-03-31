@@ -53,7 +53,7 @@
     <xacro:wheel prefix="rear_left" parent="${prefix}base_link" x_reflect="-1" y_reflect="1" x_off="${wheel_x_off}" y_off="${wheel_y_off}" z_off="${wheel_z_off}"/>
     <xacro:wheel prefix="rear_right" parent="${prefix}base_link" x_reflect="-1" y_reflect="-1" x_off="${wheel_x_off}" y_off="${wheel_y_off}" z_off="${wheel_z_off}"/>
     <xacro:lidar prefix="rover0" parent="${prefix}base_link" base_height="${base_height}" x_off="${lidar_x_off}" />
-    <xacro:imu prefix="rover0" parent="${prefix}base_link" x_off="0" y_off="0" z_off="0"/>
+    <xacro:imu prefix="rover0" parent="${prefix}base_link" x_off="0" y_off="0.0125" z_off="0.008"/>
     <xacro:camera prefix="rover0" parent="${prefix}base_link" x_off="${camera_x_off}" y_off="${camera_y_off}" z_off="${camera_z_off}"/>
   </xacro:macro>
 </robot>
