@@ -4,17 +4,21 @@
 
 #include "logger.hpp"
 
-namespace {
+namespace
+{
 static mutex_t                        m;
 std::function<void(std::string_view)> writer = [](std::string_view msg) {};
 }
 
-namespace logger {
+namespace logger
+{
 void _log_impl(std::string_view msg)
 {
   uint32_t owner;
-  if (!mutex_try_enter(&::m, &owner)) {
-    if (owner == get_core_num()) {
+  if (!mutex_try_enter(&::m, &owner))
+  {
+    if (owner == get_core_num())
+    {
       return;
     }
     mutex_enter_blocking(&::m);

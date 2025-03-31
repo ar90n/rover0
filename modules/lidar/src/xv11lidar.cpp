@@ -12,7 +12,8 @@
 
 #include "xv11lidar.h"
 
-namespace {
+namespace
+{
 using namespace ::xv11;
 
 constexpr uint8_t StartByte       = 0xFA;
@@ -27,7 +28,8 @@ inline uint16_t checksum(PacketBuffer const& data)
 {
   uint32_t       chk32 = 0;
   uint8_t const* ptr   = data.data();
-  for (int i = 0; i < 10; ++i, ptr += 2) {
+  for (int i = 0; i < 10; ++i, ptr += 2)
+  {
     uint16_t const word = decode_u16(ptr);
     chk32               = (chk32 << 1) + word;
   }
@@ -48,7 +50,8 @@ inline void decodePacket(PacketBuffer const& data, uint32_t const timestamp_us, 
   packet->motor_rpm  = static_cast<float>(decode_u16(ptr)) * SpeedMultiplier;
   ptr               += 2;
 
-  for (int i = 0; i < 4; ++i) {
+  for (int i = 0; i < 4; ++i)
+  {
     packet->distances[i]  = decode_u16(ptr);
     ptr                  += 2;
 
@@ -79,17 +82,22 @@ bool xv11::Lidar::process(DataPacket* packet)
 {
   bool has_data = false;
 
-  do {
+  do
+  {
     has_data = false;
-    while (m_packet_bytes < std::tuple_size<PacketBuffer>::value) {
+    while (m_packet_bytes < std::tuple_size<PacketBuffer>::value)
+    {
       const auto ret = m_read_byte();
-      if (!std::get<0>(ret)) {
+      if (!std::get<0>(ret))
+      {
         break;
       }
       int byte = std::get<1>(ret);
 
-      if (m_packet_bytes == 0) {
-        if (byte != StartByte) {
+      if (m_packet_bytes == 0)
+      {
+        if (byte != StartByte)
+        {
           continue;
         }
 
@@ -98,10 +106,12 @@ bool xv11::Lidar::process(DataPacket* packet)
       m_packet[m_packet_bytes++] = byte;
     }
 
-    if (m_packet_bytes == std::tuple_size<PacketBuffer>::value) {
+    if (m_packet_bytes == std::tuple_size<PacketBuffer>::value)
+    {
       has_data       = true;
       m_packet_bytes = 0;
-      if (is_valid_packet(m_packet)) {
+      if (is_valid_packet(m_packet))
+      {
         decodePacket(m_packet, m_packet_timestamp_us, packet);
         cur_motor_rpm = packet->motor_rpm;
         return true;
@@ -115,7 +125,8 @@ void xv11::Lidar::apply_motor_pid()
 {
   const auto cur_time    = m_micros();
   const auto duration_ms = (cur_time - last_process_time) / 1000;
-  if (duration_ms < LIDAR_SAMPLE_TIME_MS) {
+  if (duration_ms < LIDAR_SAMPLE_TIME_MS)
+  {
     return;
   }
   last_process_time = cur_time;

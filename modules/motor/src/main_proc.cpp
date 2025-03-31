@@ -15,7 +15,8 @@
 #include "queue.hpp"
 #include "task.hpp"
 
-namespace {
+namespace
+{
 
 auto gpio_led          = device::GpioLED::instance();
 auto gpio_esw          = device::GpioESW::instance();
@@ -65,7 +66,8 @@ MotorDriver motor_front_right_driver(
 template<typename T>
 void push_msg(T const& msg)
 {
-  if (!multicore_fifo_wready()) {
+  if (!multicore_fifo_wready())
+  {
     return;
   }
   multicore_fifo_push_blocking(serialize(msg));
@@ -73,7 +75,8 @@ void push_msg(T const& msg)
 
 std::optional<message::RxMsg> pop_rx_msg()
 {
-  if (!intercore_fifo.has_data()) {
+  if (!intercore_fifo.has_data())
+  {
     return std::nullopt;
   }
 
@@ -85,7 +88,8 @@ template<unsigned Interval>
 async_at_time_worker_t create_motor_control_worker()
 {
   return task::create_scheduled_worker_in_ms<Interval>(
-    [](async_context_t* context, async_at_time_worker_t* worker) {
+    [](async_context_t* context, async_at_time_worker_t* worker)
+    {
       motor_rear_left_driver.update(motor_rear_left.get_encoder_value().value_or(0));
       motor_rear_left.drive(motor_rear_left_driver.drive_power());
 
@@ -105,7 +109,8 @@ template<unsigned Interval>
 async_at_time_worker_t create_imu_control_worker()
 {
   return task::create_scheduled_worker_in_ms<Interval>(
-    [](async_context_t* context, async_at_time_worker_t* worker) {
+    [](async_context_t* context, async_at_time_worker_t* worker)
+    {
       auto const ret    = imu_.read();
       imu_store.accel_x = ret.accel.x;
       imu_store.accel_y = ret.accel.y;
@@ -122,7 +127,8 @@ template<unsigned Interval>
 async_at_time_worker_t create_led_heartbeat_worker()
 {
   return task::create_scheduled_worker_in_ms<Interval>(
-    [](async_context_t* context, async_at_time_worker_t* worker) {
+    [](async_context_t* context, async_at_time_worker_t* worker)
+    {
       static bool led{ false };
       gpio_led.write(led);
       led = !led;
@@ -134,14 +140,18 @@ template<unsigned Interval>
 async_at_time_worker_t create_emergency_worker()
 {
   return task::create_scheduled_worker_in_ms<Interval>(
-    [](async_context_t* context, async_at_time_worker_t* worker) {
+    [](async_context_t* context, async_at_time_worker_t* worker)
+    {
       auto const esw = gpio_esw.read();
-      if (esw) {
+      if (esw)
+      {
         motor_front_left_driver.emergency();
         motor_front_right_driver.emergency();
         motor_rear_left_driver.emergency();
         motor_rear_right_driver.emergency();
-      } else {
+      }
+      else
+      {
         motor_front_left_driver.release();
         motor_front_right_driver.release();
         motor_rear_left_driver.release();
@@ -157,7 +167,8 @@ struct MsgVisitor
   {
     // msg.value is in q7 format
     float const tics_per_sec{ static_cast<float>(msg.value) / 128.0f };
-    switch (msg.param) {
+    switch (msg.param)
+    {
       case message::MotorDevice::REAR_LEFT:
         motor_rear_left_driver.set_target_tics_per_sec(tics_per_sec);
         break;
@@ -174,32 +185,42 @@ struct MsgVisitor
   }
   void operator()(message::EncoderMsg const& msg) const
   {
-    switch (msg.param) {
-      case message::MotorDevice::REAR_LEFT: {
+    switch (msg.param)
+    {
+      case message::MotorDevice::REAR_LEFT:
+      {
         push_msg(message::EncoderMsg{ message::MotorDevice::REAR_LEFT,
                                       motor_rear_left_driver.accumulated_tics() });
         motor_rear_left_driver.clear_accumulated_tics();
-      } break;
-      case message::MotorDevice::REAR_RIGHT: {
+      }
+      break;
+      case message::MotorDevice::REAR_RIGHT:
+      {
         push_msg(message::EncoderMsg{ message::MotorDevice::REAR_RIGHT,
                                       motor_rear_right_driver.accumulated_tics() });
         motor_rear_right_driver.clear_accumulated_tics();
-      } break;
-      case message::MotorDevice::FRONT_LEFT: {
+      }
+      break;
+      case message::MotorDevice::FRONT_LEFT:
+      {
         push_msg(message::EncoderMsg{ message::MotorDevice::FRONT_LEFT,
                                       motor_front_left_driver.accumulated_tics() });
         motor_front_left_driver.clear_accumulated_tics();
-      } break;
-      case message::MotorDevice::FRONT_RIGHT: {
+      }
+      break;
+      case message::MotorDevice::FRONT_RIGHT:
+      {
         push_msg(message::EncoderMsg{ message::MotorDevice::FRONT_RIGHT,
                                       motor_front_right_driver.accumulated_tics() });
         motor_front_right_driver.clear_accumulated_tics();
-      } break;
+      }
+      break;
     }
   }
   void operator()(message::ImuMsg const& msg) const
   {
-    switch (msg.param) {
+    switch (msg.param)
+    {
       case message::ImuData::ACCEL_X:
         push_msg(message::ImuMsg{ message::ImuData::ACCEL_X, imu_store.accel_x });
         break;
@@ -227,9 +248,11 @@ struct MsgVisitor
 
 void handle_msg()
 {
-  while (true) {
+  while (true)
+  {
     auto const msg{ pop_rx_msg() };
-    if (!msg.has_value()) {
+    if (!msg.has_value())
+    {
       break;
     }
     std::visit(MsgVisitor{}, msg.value());
@@ -237,7 +260,8 @@ void handle_msg()
 }
 }
 
-namespace main_proc {
+namespace main_proc
+{
 int run()
 {
   ::imu_.init(Config::I2C_IMU_BAUDRATE);
@@ -261,7 +285,8 @@ int run()
     create_imu_control_worker<Config::IMU_CONTROL_WORKER_INTERVAL_MS>();
   async_context_add_at_time_worker_in_ms(&context.core, &imu_control_worker, 0);
 
-  while (1) {
+  while (1)
+  {
     handle_msg();
     async_context_poll(&context.core);
   }

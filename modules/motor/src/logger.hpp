@@ -5,7 +5,8 @@
 
 #include <pico/mutex.h>
 
-namespace logger {
+namespace logger
+{
 void _log_impl(std::string_view msg);
 void init(std::function<void(std::string_view)> writer);
 template<typename... _Args>

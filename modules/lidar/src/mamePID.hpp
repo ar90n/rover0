@@ -6,7 +6,8 @@
 #include <limits>
 #include <type_traits>
 
-namespace mamePID {
+namespace mamePID
+{
 
 template<typename T, typename U>
 concept Component = requires(T t) {
@@ -196,7 +197,11 @@ template<typename T>
 auto pi(T kp, T ki, T sp, T min = std::numeric_limits<T>::lowest(), T max = std::numeric_limits<T>::max())
 {
   return PID<T, Proportional<T>, Integral<T>, Zero<T>>(
-    Proportional<T>(kp, sp), Integral<T>(ki, sp, min, max), Zero<T>(), min, max
+    Proportional<T>(kp, sp),
+    Integral<T>(ki, sp, min, max),
+    Zero<T>(),
+    min,
+    max
   );
 }
 
@@ -204,7 +209,11 @@ template<typename T>
 auto pd(T kp, T kd, T sp, T min = std::numeric_limits<T>::lowest(), T max = std::numeric_limits<T>::max())
 {
   return PID<T, Proportional<T>, Zero<T>, Derivative<T>>(
-    Proportional<T>(kp, sp), Zero<T>(), Derivative<T>(kd, sp), min, max
+    Proportional<T>(kp, sp),
+    Zero<T>(),
+    Derivative<T>(kd, sp),
+    min,
+    max
   );
 }
 
@@ -219,7 +228,11 @@ auto pid(
 )
 {
   return PID<T, Proportional<T>, Integral<T>, Derivative<T>>(
-    Proportional<T>(kp, sp), Integral<T>(ki, sp, min, max), Derivative<T>(kd, sp), min, max
+    Proportional<T>(kp, sp),
+    Integral<T>(ki, sp, min, max),
+    Derivative<T>(kd, sp),
+    min,
+    max
   );
 }
 
@@ -234,7 +247,11 @@ auto pi_d(
 )
 {
   return PID<T, Proportional<T>, Integral<T>, PrecedingDerivative<T>>(
-    Proportional<T>(kp, sp), Integral<T>(ki, sp, min, max), PrecedingDerivative<T>(kd, sp), min, max
+    Proportional<T>(kp, sp),
+    Integral<T>(ki, sp, min, max),
+    PrecedingDerivative<T>(kd, sp),
+    min,
+    max
   );
 }
 
@@ -249,7 +266,11 @@ auto i_pd(
 )
 {
   return PID<T, PrecedingProportional<T>, Integral<T>, PrecedingDerivative<T>>(
-    PrecedingProportional<T>(kp, sp), Integral<T>(ki, sp, min, max), PrecedingDerivative<T>(kd, sp), min, max
+    PrecedingProportional<T>(kp, sp),
+    Integral<T>(ki, sp, min, max),
+    PrecedingDerivative<T>(kd, sp),
+    min,
+    max
   );
 }
 

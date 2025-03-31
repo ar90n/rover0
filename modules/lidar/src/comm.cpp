@@ -7,7 +7,8 @@
 #include "uart.hpp"
 #include "xv11lidar.h"
 
-namespace {
+namespace
+{
 using GpioPWM = Gpio<Config::PWM_PIN, GPIO_FUNC_PWM>;
 using GpioLED = Gpio<Config::LED_PIN>;
 using UartLidar =
@@ -20,7 +21,8 @@ auto uart_lidar = UartLidar::instance();
 // LiDAR data processing functions
 xv11::ReturnType read_byte_from_serial()
 {
-  if (!uart_lidar.has_data()) {
+  if (!uart_lidar.has_data())
+  {
     return std::make_pair(false, static_cast<uint8_t>(0));
   }
   return std::make_pair(true, uart_lidar.read());
@@ -48,7 +50,8 @@ void lidar_motor_control_task()
 void lidar_fetch_task()
 {
   xv11::DataPacket packet;
-  while (lidar.process(&packet)) {
+  while (lidar.process(&packet))
+  {
     // Send data to Core0 via FIFO
     // First word: angle_quad (16 bits) + first distance (16 bits)
     uint32_t word1 = (static_cast<uint32_t>(packet.angle_quad) << 16) | (packet.distances[0] & 0xFFFF);
@@ -84,8 +87,7 @@ void comm_entry()
 
   TaskRunner{ create_scheduled_task<500>(heartbeat_task),
               create_scheduled_task<10>(lidar_fetch_task),
-              create_scheduled_task<50>(lidar_motor_control_task)
-             }
+              create_scheduled_task<50>(lidar_motor_control_task) }
     .run_forever();
 }
 

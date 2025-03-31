@@ -12,7 +12,8 @@ public:
   static void load()
   {
     static bool loaded{ false };
-    if (!loaded) {
+    if (!loaded)
+    {
       loaded   = true;
       auto pio = reinterpret_cast<PIO>(PIO_BASE);
       pio_add_program(pio, &encoder_program);
@@ -33,12 +34,14 @@ public:
   std::optional<uint16_t> get()
   {
     auto pio = reinterpret_cast<PIO>(PIO_BASE);
-    if (pio_sm_get_rx_fifo_level(pio, SM) == 0) {
+    if (pio_sm_get_rx_fifo_level(pio, SM) == 0)
+    {
       return std::nullopt;
     }
 
     uint16_t ret{ 0 };
-    while (0 < pio_sm_get_rx_fifo_level(pio, SM)) {
+    while (0 < pio_sm_get_rx_fifo_level(pio, SM))
+    {
       ret += 63 - static_cast<uint16_t>(pio_sm_get(pio, SM));
     }
 

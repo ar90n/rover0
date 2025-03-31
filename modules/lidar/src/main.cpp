@@ -1,13 +1,13 @@
-#include <time.h>
 #include <rcl/rcl.h>
 #include <rclc/executor.h>
 #include <rclc/rclc.h>
 #include <rmw_microros/rmw_microros.h>
 #include <rosidl_runtime_c/string.h>
 #include <rosidl_runtime_c/string_functions.h>
-#include <std_msgs/msg/string.h>
 #include <sensor_msgs/msg/laser_scan.h>
 #include <std_msgs/msg/int32.h>
+#include <std_msgs/msg/string.h>
+#include <time.h>
 
 #include <pico/multicore.h>
 #include <pico/stdlib.h>
@@ -40,16 +40,20 @@ extern "C"
 #endif
 
 #define RCCHECK(fn)                                                                                          \
-  do {                                                                                                       \
+  do                                                                                                         \
+  {                                                                                                          \
     rcl_ret_t temp_rc = fn;                                                                                  \
-    if ((temp_rc != RCL_RET_OK)) {                                                                           \
+    if ((temp_rc != RCL_RET_OK))                                                                             \
+    {                                                                                                        \
       error_loop();                                                                                          \
     }                                                                                                        \
   } while (0)
 #define RCSOFTCHECK(fn)                                                                                      \
-  do {                                                                                                       \
+  do                                                                                                         \
+  {                                                                                                          \
     rcl_ret_t temp_rc = fn;                                                                                  \
-    if ((temp_rc != RCL_RET_OK)) {                                                                           \
+    if ((temp_rc != RCL_RET_OK))                                                                             \
+    {                                                                                                        \
       /* Log or handle error if needed in the future */                                                      \
     }                                                                                                        \
   } while (0)
@@ -59,7 +63,8 @@ using uRosTransport = UartTransport<device::UartControl>;
 auto uart_ctrl      = device::UartControl::instance();
 auto intercore_fifo = device::Core0IntercoreFIFO::instance();
 
-namespace {
+namespace
+{
 float      distances[360];
 float      intensities[360];
 uint32_t   last_timestamp_us = 0;
@@ -71,12 +76,14 @@ void lidar_receive_task(rcl_timer_t* timer, int64_t last_call_time)
 {
   RCLC_UNUSED(last_call_time);
 
-  if (timer == NULL) {
+  if (timer == NULL)
+  {
     return;
   }
 
   // Check if there's data in the FIFO
-  while (6 <= intercore_fifo.size()) {
+  while (6 <= intercore_fifo.size())
+  {
     // Read the first word: angle_quad (16 bits) + first distance (16 bits)
     uint32_t word1      = intercore_fifo.read();
     uint16_t angle_quad = word1 >> 16;
@@ -121,7 +128,8 @@ void lidar_receive_task(rcl_timer_t* timer, int64_t last_call_time)
     intensities[offset + 3] = intensity4;
 
     // Calculate duration for time_increment
-    if (last_timestamp_us > 0) {
+    if (last_timestamp_us > 0)
+    {
       duration = (timestamp_us - last_timestamp_us) / 1000000.0 / 4.0;
     }
     last_timestamp_us = timestamp_us;
@@ -139,7 +147,8 @@ void                        publish_timer_callback(rcl_timer_t* timer, int64_t l
 {
   RCLC_UNUSED(last_call_time);
 
-  if (timer == NULL) {
+  if (timer == NULL)
+  {
     return;
   }
 
@@ -159,7 +168,8 @@ void                        publish_timer_callback(rcl_timer_t* timer, int64_t l
   msg.range_min            = 0.15;
   msg.range_max            = 6.0;
 
-  for (int i = 0; i < 360; i++) {
+  for (int i = 0; i < 360; i++)
+  {
     msg.ranges.data[i]      = distances[i];
     msg.intensities.data[i] = intensities[i];
   }
@@ -171,7 +181,8 @@ void                        publish_timer_callback(rcl_timer_t* timer, int64_t l
 // Error handle loop
 void error_loop()
 {
-  while (1) {
+  while (1)
+  {
     sleep_ms(100);
   }
 }
@@ -188,7 +199,12 @@ int main()
 
   uRosTransport trns(uart_ctrl, 230400);
   rmw_uros_set_custom_transport(
-    true, &trns, uRosTransport::open, uRosTransport::close, uRosTransport::write, uRosTransport::read
+    true,
+    &trns,
+    uRosTransport::open,
+    uRosTransport::close,
+    uRosTransport::write,
+    uRosTransport::read
   );
 
   // Wait for agent successful ping for 2 minutes.
@@ -198,7 +214,8 @@ int main()
   rcl_allocator_t allocator{ rcl_get_default_allocator() };
   auto            init_options = rcl_get_zero_initialized_init_options();
   RCCHECK(rcl_init_options_init(&init_options, allocator));
-  if (0 < Config::ROS_DOMAIN_ID) {
+  if (0 < Config::ROS_DOMAIN_ID)
+  {
     RCCHECK(rcl_init_options_set_domain_id(&init_options, static_cast<size_t>(Config::ROS_DOMAIN_ID)));
   }
 
@@ -211,21 +228,30 @@ int main()
 
   // create publisher
   RCCHECK(rclc_publisher_init_default(
-    &publisher, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, LaserScan), "scan"
+    &publisher,
+    &node,
+    ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, LaserScan),
+    "scan"
   ));
 
   // create publish_timer,
   rcl_timer_t        publish_timer;
   const unsigned int publish_timer_timeout = 60.0 / Config::LIDAR_RPM * 1000;
   RCCHECK(rclc_timer_init_default(
-    &publish_timer, &support, RCL_MS_TO_NS(publish_timer_timeout), publish_timer_callback
+    &publish_timer,
+    &support,
+    RCL_MS_TO_NS(publish_timer_timeout),
+    publish_timer_callback
   ));
 
   // create lidar_receive_timer
   rcl_timer_t        lidar_receive_timer;
   const unsigned int lidar_receive_timeout = 5; // Check more frequently for FIFO data
   RCCHECK(rclc_timer_init_default(
-    &lidar_receive_timer, &support, RCL_MS_TO_NS(lidar_receive_timeout), lidar_receive_task
+    &lidar_receive_timer,
+    &support,
+    RCL_MS_TO_NS(lidar_receive_timeout),
+    lidar_receive_task
   ));
 
   // create executor
@@ -234,7 +260,8 @@ int main()
   RCCHECK(rclc_executor_add_timer(&executor, &publish_timer));
   RCCHECK(rclc_executor_add_timer(&executor, &lidar_receive_timer));
 
-  while (true) {
+  while (true)
+  {
     RCSOFTCHECK(rclc_executor_spin_some(&executor, RCL_MS_TO_NS(1)));
   }
   return 0;

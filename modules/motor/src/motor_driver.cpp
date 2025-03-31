@@ -1,20 +1,28 @@
 #include "motor_driver.hpp"
 
-namespace {
+namespace
+{
 static constexpr float MAX_TICS_PER_SEC{ 480.0f };
 static constexpr float PID_OUTPUT_RESCALE_COEFF{ 1.0f / MAX_TICS_PER_SEC };
 }
 
 MotorDriver::MotorDriver(float pid_kp, float pid_ki, float pid_kd, uint32_t interval_ms)
   : interval_ms(interval_ms)
-  , motor_pid(mamePID::pi_d<
-              float>(pid_kp, pid_ki, pid_kd, static_cast<float>(interval_ms) / 1000.0, -MAX_TICS_PER_SEC, MAX_TICS_PER_SEC))
+  , motor_pid(mamePID::pi_d<float>(
+      pid_kp,
+      pid_ki,
+      pid_kd,
+      static_cast<float>(interval_ms) / 1000.0,
+      -MAX_TICS_PER_SEC,
+      MAX_TICS_PER_SEC
+    ))
 {
 }
 
 void MotorDriver::update(int16_t delta_tics)
 {
-  if (is_emergency) {
+  if (is_emergency)
+  {
     return;
   }
 
@@ -32,7 +40,8 @@ void MotorDriver::set_target_tics_per_sec(float tics_per_sec)
 
 float MotorDriver::drive_power() const
 {
-  if (is_emergency) {
+  if (is_emergency)
+  {
     return 0;
   }
 

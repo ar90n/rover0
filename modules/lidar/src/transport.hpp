@@ -26,7 +26,8 @@ public:
 
   static bool open(struct uxrCustomTransport* transport)
   {
-    if (auto* self = static_cast<UartTransport*>(transport->args)) {
+    if (auto* self = static_cast<UartTransport*>(transport->args))
+    {
       self->uart.init(self->baurate);
       return true;
     }
@@ -36,7 +37,8 @@ public:
 
   static bool close(struct uxrCustomTransport* transport)
   {
-    if (auto* self = static_cast<UartTransport*>(transport->args)) {
+    if (auto* self = static_cast<UartTransport*>(transport->args))
+    {
       self->uart.close();
       return true;
     }
@@ -45,7 +47,8 @@ public:
   }
   static size_t write(struct uxrCustomTransport* transport, const uint8_t* buf, size_t len, uint8_t* err)
   {
-    if (auto* self = static_cast<UartTransport*>(transport->args)) {
+    if (auto* self = static_cast<UartTransport*>(transport->args))
+    {
       self->uart.write(buf, len);
       return len;
     }
@@ -55,7 +58,8 @@ public:
   static size_t
   read(struct uxrCustomTransport* transport, uint8_t* buf, size_t len, int timeout, uint8_t* err)
   {
-    if (auto* self = static_cast<UartTransport*>(transport->args)) {
+    if (auto* self = static_cast<UartTransport*>(transport->args))
+    {
       return self->uart.read(buf, len, timeout);
     }
 

@@ -1,5 +1,6 @@
 #pragma once
 
-namespace comm_proc {
+namespace comm_proc
+{
 void run();
 }

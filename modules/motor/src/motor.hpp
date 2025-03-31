@@ -33,7 +33,8 @@ public:
 
   void drive(float value)
   {
-    if (is_emergency) {
+    if (is_emergency)
+    {
       return;
     }
 
@@ -55,12 +56,14 @@ public:
   std::optional<int16_t> get_encoder_value()
   {
     auto const encoder_value = Encoder::instance().get();
-    if(!encoder_value.has_value()) {
+    if (!encoder_value.has_value())
+    {
       return std::nullopt;
     }
 
     auto const value = static_cast<int16_t>(encoder_value.value());
-    if (direction == Direction::BACKWARD) {
+    if (direction == Direction::BACKWARD)
+    {
       return -value;
     }
 

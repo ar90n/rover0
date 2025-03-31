@@ -27,7 +27,8 @@ concept Component = requires(T t) {
   { t.calculate(U{}, U{}) } -> std::same_as<U>;
 };
 
-namespace xv11 {
+namespace xv11
+{
 struct DataPacket
 {
   uint32_t timestamp_us; // timestamp in microseconds

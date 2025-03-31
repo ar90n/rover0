@@ -8,7 +8,8 @@
 #include "motor.hpp"
 #include "uart.hpp"
 
-namespace device {
+namespace device
+{
 using GpioLED                 = Gpio<Config::LED_PIN>;
 using GpioESW                 = Gpio<Config::ESW_PIN, GPIO_FUNC_SIO, GPIO_IN>;
 using RearLeftRotaryEncoder   = RotaryEncoder<Config::REAR_LEFT_ENCODER_PIN, PIO0_BASE, 0>;

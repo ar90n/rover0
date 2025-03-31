@@ -9,7 +9,7 @@
 
 /**
  * @brief Concept for callable objects that can be used as tasks
- * 
+ *
  * Requires that the object can be called with no arguments and returns void
  */
 template<typename F>
@@ -19,7 +19,7 @@ concept TaskCallable = requires(F f) {
 
 /**
  * @brief Concept for any type that can be used as a scheduled task
- * 
+ *
  * Requires that the object has a get_native_worker method that returns
  * a reference to an async_at_time_worker_t
  */
@@ -34,7 +34,7 @@ class ScheduledTask;
 
 /**
  * @brief Wrapper class for the async context to encapsulate PICO SDK dependencies
- * 
+ *
  * Manages a collection of scheduled tasks and provides methods to poll and run them
  */
 template<ScheduledTaskInterface... Tasks>
@@ -47,7 +47,7 @@ private:
 public:
   /**
    * @brief Constructs a TaskRunner with the given tasks
-   * 
+   *
    * @param args The scheduled tasks to run
    */
   TaskRunner(Tasks&&... args)
@@ -56,17 +56,16 @@ public:
     async_context_poll_init_with_defaults(&context);
 
     std::apply(
-      [this](auto&... task) {
-        (async_context_add_at_time_worker_in_ms(&context.core, &task.get_native_worker(), 0), ...);
-      },
+      [this](auto&... task)
+      { (async_context_add_at_time_worker_in_ms(&context.core, &task.get_native_worker(), 0), ...); },
       tasks
     );
   }
 
   ~TaskRunner() = default;
-  
+
   // Prevent copying to avoid resource management issues
-  TaskRunner(const TaskRunner&) = delete;
+  TaskRunner(const TaskRunner&)            = delete;
   TaskRunner& operator=(const TaskRunner&) = delete;
 
   /**
@@ -76,12 +75,13 @@ public:
 
   /**
    * @brief Runs the task loop indefinitely, polling at regular intervals
-   * 
+   *
    * @param poll_interval_ms Time between polls in milliseconds (default: 10ms)
    */
   void run_forever(uint32_t poll_interval_ms = 10)
   {
-    while (true) {
+    while (true)
+    {
       poll();
       sleep_ms(poll_interval_ms);
     }
@@ -90,7 +90,7 @@ public:
 
 /**
  * @brief Wrapper class for a scheduled task to encapsulate PICO SDK dependencies
- * 
+ *
  * @tparam Interval The interval in milliseconds at which to run the task
  * @tparam F The type of the callable object
  */
@@ -104,34 +104,34 @@ private:
 public:
   /**
    * @brief Constructs a ScheduledTask with the given callback
-   * 
+   *
    * @param callback The function to call when the task is executed
    */
   ScheduledTask(F&& callback)
     : callback(std::forward<F>(callback))
   {
     // Create worker
-    worker = { 
-      .do_work = [](async_context_t* context, async_at_time_worker_t* worker) {
-        auto* self = reinterpret_cast<ScheduledTask*>(worker->user_data);
-        self->callback();
-        async_context_add_at_time_worker_in_ms(context, worker, Interval);
-      },
-      .user_data = reinterpret_cast<void*>(this) 
-    };
+    worker = { .do_work =
+                 [](async_context_t* context, async_at_time_worker_t* worker)
+               {
+                 auto* self = reinterpret_cast<ScheduledTask*>(worker->user_data);
+                 self->callback();
+                 async_context_add_at_time_worker_in_ms(context, worker, Interval);
+               },
+               .user_data = reinterpret_cast<void*>(this) };
   }
 
   // Allow moving
-  ScheduledTask(ScheduledTask&&) = default;
+  ScheduledTask(ScheduledTask&&)            = default;
   ScheduledTask& operator=(ScheduledTask&&) = default;
-  
+
   // Prevent copying to avoid resource management issues
-  ScheduledTask(const ScheduledTask&) = delete;
+  ScheduledTask(const ScheduledTask&)            = delete;
   ScheduledTask& operator=(const ScheduledTask&) = delete;
 
   /**
    * @brief Gets the native worker for this task
-   * 
+   *
    * @return Reference to the async_at_time_worker_t
    */
   auto& get_native_worker() { return worker; }
@@ -139,7 +139,7 @@ public:
 
 /**
  * @brief Creates a scheduled task with the given interval and callback
- * 
+ *
  * @tparam Interval The interval in milliseconds at which to run the task
  * @tparam F The type of the callable object
  * @param callback The function to call when the task is executed

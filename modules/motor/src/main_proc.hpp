@@ -1,5 +1,6 @@
 #pragma once
 
-namespace main_proc {
+namespace main_proc
+{
 void run();
 }

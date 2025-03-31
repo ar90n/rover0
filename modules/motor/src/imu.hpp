@@ -5,7 +5,8 @@
 #include "endian_utils.hpp"
 #include "gpio.hpp"
 
-namespace imu {
+namespace imu
+{
 struct Offsets
 {
   int16_t acc_x;
