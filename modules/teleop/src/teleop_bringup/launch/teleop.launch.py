@@ -53,6 +53,11 @@ def generate_launch_description():
             default_value=os.path.join(teleop_bringup_dir, "config", "camera_params.yaml"),
             description="Full path to the ROS params for cmeara",
         ),
+        DeclareLaunchArgument(
+            "foxglove_bridge_port",
+            default_value="8765",
+            description="Port of foxglove bridge",
+        ),
     ]
 
     prefix = LaunchConfiguration("prefix")
@@ -60,15 +65,62 @@ def generate_launch_description():
     log_level = LaunchConfiguration("log_level")
     camera_params_file = LaunchConfiguration("camera_params_file")
     camera_calibration_file = LaunchConfiguration("camera_calibration_file")
+    foxglove_bridge_port = LaunchConfiguration("foxglove_bridge_port")
 
     use_sim_time = IfElseSubstitution(use_sim, if_value="True", else_value="False")
 
-    camera_node = Node(
-        package="camera_ros",
-        executable="camera_node",
-        name='camera',
-        output="both",
-        parameters=[camera_params_file, {'camera_info_url': camera_calibration_file}],
+
+    teleop_nodes = GroupAction(
+        actions=[
+            Node(
+                name="teleop_container",
+                package="rclcpp_components",
+                executable="component_container_isolated",
+                parameters=[{"autostart": "true"}],
+                arguments=["--ros-args", "--log-level", log_level],
+                output="screen",
+            ),
+            LoadComposableNodes(
+                target_container="teleop_container",
+                composable_node_descriptions=[
+                    ComposableNode(
+                        package="camera_ros",
+                        plugin="camera::CameraNode",
+                        name="camera",
+                        parameters=[camera_params_file, {'camera_info_url': camera_calibration_file, 'use_sim_time': use_sim_time}],
+                    ),
+                ],
+            ),
+            LoadComposableNodes(
+                target_container="teleop_container",
+                composable_node_descriptions=[
+                    ComposableNode(
+                        package="foxglove_bridge",
+                        plugin="foxglove_bridge::FoxgloveBridge",
+                        name="foxglove_bridge",
+                        parameters=[{
+                            'port': foxglove_bridge_port,
+                            "address"                   :"0.0.0.0" ,
+                            "tls"                       :False ,
+                            "certfile"                  :"" ,
+                            "keyfile"                   :"" ,
+                            "topic_whitelist"           :['.*'] ,
+                            "param_whitelist"           :['.*'] ,
+                            "service_whitelist"         :['.*'] ,
+                            "client_topic_whitelist"    :['.*'] ,
+                            "min_qos_depth"             :1 ,
+                            "max_qos_depth"             :10 ,
+                            "num_threads"               :0 ,
+                            "send_buffer_limit"         :10000000 ,
+                            "use_sim_time"              :use_sim_time ,
+                            "capabilities"              :["clientPublish","parameters","parametersSubscribe","services","connectionGraph","assets"],
+                            "include_hidden"            :False ,
+                            "asset_uri_allowlist"       :['^package://(?:\\w+/)*\\w+\\.(?:dae|fbx|glb|gltf|jpeg|jpg|mtl|obj|png|stl|tif|tiff|urdf|webp|xacro)$']
+                        }],
+                    ),
+                ],
+            ),
+        ]
     )
 
     #image_transport_node = Node(
@@ -89,20 +141,8 @@ def generate_launch_description():
     #    ],
     #)
 
-    foxglove_bridge_node = IncludeLaunchDescription(
-        XMLLaunchDescriptionSource(
-            os.path.join(
-                get_package_share_directory('foxglove_bridge'),
-                'launch',
-                'foxglove_bridge_launch.xml'
-            )
-        ),
-        launch_arguments={'port': '8765'}.items()
-    )
-
     nodes: list[LaunchDescriptionEntity] = [
-        camera_node,
-        foxglove_bridge_node
+        teleop_nodes,
     ]
 
     return LaunchDescription(declared_arguments + nodes)
