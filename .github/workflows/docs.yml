@@ -10,7 +10,7 @@ jobs:
   build-docs:
     runs-on: ubuntu-latest
     container:
-      image: ros:jazzy-ros-base-noble
+      image: ros:humble-ros-base
     
     steps:
     - uses: actions/checkout@v3
