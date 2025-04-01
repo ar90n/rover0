@@ -1,0 +1,12 @@
+# Default owners for everything in the repo
+* @ar90n
+
+# Specific module owners
+/modules/rover0/ @ar90n
+/modules/teleop/ @ar90n
+/modules/lidar/ @ar90n
+/modules/motor/ @ar90n
+/modules/uros-agent-lidar/ @ar90n
+
+# CI/CD workflow owners
+/.github/workflows/ @ar90n

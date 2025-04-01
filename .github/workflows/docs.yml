@@ -1,0 +1,40 @@
+name: Documentation
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    container:
+      image: ros:jazzy-ros-base-noble
+    
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+    
+    - name: Install dependencies
+      run: |
+        apt-get update
+        apt-get install -y python3-pip doxygen graphviz
+        pip3 install sphinx sphinx_rtd_theme breathe
+        
+    - name: Build documentation
+      run: |
+        cd modules/rover0
+        . /opt/ros/$ROS_DISTRO/setup.sh
+        
+        # Build Doxygen documentation for C++ code
+        for pkg in rover0_controller rover0_hardware_interface; do
+          if [ -d "src/$pkg" ]; then
+            cd src/$pkg
+            if [ -f "Doxyfile" ]; then
+              doxygen
+            fi
+            cd ../../
+          fi
+        done

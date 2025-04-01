@@ -1,0 +1,30 @@
+name: Lint
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  ament_lint:
+    runs-on: ubuntu-latest
+    container:
+      image: ros:jazzy-ros-base-noble
+    
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+    
+    - name: Install dependencies
+      run: |
+        apt-get update
+        apt-get install -y python3-pip python3-colcon-common-extensions
+        apt-get install -y ament-lint-auto ament-lint-common
+        
+    - name: Run ament_lint
+      run: |
+        cd modules/rover0
+        . /opt/ros/$ROS_DISTRO/setup.sh
+        colcon test --packages-select rover0_controller rover0_hardware_interface --event-handlers console_direct+ --ctest-args -L "lint"
