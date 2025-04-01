@@ -1,0 +1,43 @@
+name: ROS2 Build and Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: ros:jazzy-ros-base-noble
+    
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+    
+    - name: Install dependencies
+      run: |
+        apt-get update
+        apt-get install -y python3-pip python3-colcon-common-extensions
+        rosdep update
+        
+    - name: Install ROS dependencies
+      run: |
+        cd modules/rover0
+        rosdep install -y -r --from-paths src -t build -t buildtool -t exec --ignore-src
+        
+    - name: Build ROS2 packages
+      run: |
+        cd modules/rover0
+        . /opt/ros/$ROS_DISTRO/setup.sh
+        colcon build --symlink-install
+        
+    - name: Run tests
+      run: |
+        cd modules/rover0
+        . /opt/ros/$ROS_DISTRO/setup.sh
+        . install/setup.sh
+        colcon test
+        colcon test-result --verbose
