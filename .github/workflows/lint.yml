@@ -19,9 +19,11 @@ jobs:
     
     - name: Install dependencies
       run: |
+        cd modules/rover0
         apt-get update
-        apt-get install -y python3-pip python3-colcon-common-extensions
-        apt-get install -y ament-lint-auto ament-lint-common
+        rosdep update
+        rosdep install --from-paths  modules/rover0/src -y -r
+
         
     - name: Run ament_lint
       run: |
