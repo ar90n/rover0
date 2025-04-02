@@ -1,12 +1,8 @@
-from ament_index_python.packages import get_package_share_directory
-
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, ExecuteProcess, IncludeLaunchDescription
-from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.conditions import IfCondition, UnlessCondition
+from launch.actions import DeclareLaunchArgument, ExecuteProcess
 from launch.substitutions import Command, FindExecutable, LaunchConfiguration, PathJoinSubstitution
-from launch_ros.descriptions import ParameterValue
 from launch_ros.actions import Node
+from launch_ros.descriptions import ParameterValue
 from launch_ros.substitutions import FindPackageShare
 
 
@@ -56,7 +52,7 @@ def generate_launch_description():
             "sensor_msgs/JointState",
             "'{"
             'header: {stamp: {sec: 1, nanosec: 1}, frame_id: ""}, '
-            'name: ["front_left_wheel_joint", "front_right_wheel_joint", "rear_left_wheel_joint", "rear_right_wheel_joint"], '
+            'name: ["front_left_wheel_joint", "front_right_wheel_joint", "rear_left_wheel_joint", "rear_right_wheel_joint"], '  # noqa: E501
             "position: [0.0, 0.0, 0.0, 0.0], "  # e.g., set to 90 degrees
             "velocity: [0.0, 0.0, 0.0, 0.0], "
             "effort: [0.0, 0.0, 0.0, 0.0]"

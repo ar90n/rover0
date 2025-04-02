@@ -1,5 +1,5 @@
-import sys
 import queue
+import sys
 import time
 from enum import Enum
 from time import sleep
@@ -82,7 +82,7 @@ class MotorControl(Widget):
 
     @on(Button.Pressed, "#fast-backward")
     def drive_fast_backward(self) -> None:
-        self.drive_power -= 32 
+        self.drive_power -= 32
         self.drive_power = max(-320, self.drive_power)
 
     @on(Button.Pressed, "#backward")
@@ -324,7 +324,6 @@ class MotorCtrlApp(App[None]):
         self._mpsc.put(MotorMsg(type=MessageType.IMU, param=ImuData.GyroX, value=0))
         self._mpsc.put(MotorMsg(type=MessageType.IMU, param=ImuData.GyroY, value=0))
         self._mpsc.put(MotorMsg(type=MessageType.IMU, param=ImuData.GyroZ, value=0))
-
 
 
 if __name__ == "__main__":

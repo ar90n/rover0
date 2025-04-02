@@ -1,7 +1,8 @@
 import struct
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import TypeAlias, Callable, List, Optional
+from typing import Callable, List, Optional, TypeAlias
+
 
 class MessageType(Enum):
     Motor = 0
@@ -72,6 +73,7 @@ def serialize_msg(msg: Msg) -> bytes:
     buf = v + p + t
     return buf
 
+
 class State(Enum):
     HEADER_CHECKSUM = auto()
     DATA1 = auto()
@@ -79,6 +81,7 @@ class State(Enum):
     DATA3 = auto()
     DATA4 = auto()
     DATA5 = auto()
+
 
 class Transport:
     HEADER_BIT = 0x80
@@ -115,38 +118,33 @@ class Transport:
             self.buffer[self.buffer_index] = byte & self.DATA_MASK
             self.buffer_index += 1
             self.state = State.DATA2
-            
+
         elif self.state == State.DATA2:
             self.buffer[self.buffer_index] = byte & self.DATA_MASK
             self.buffer_index += 1
             self.state = State.DATA3
-            
+
         elif self.state == State.DATA3:
             self.buffer[self.buffer_index] = byte & self.DATA_MASK
             self.buffer_index += 1
             self.state = State.DATA4
-            
+
         elif self.state == State.DATA4:
             self.buffer[self.buffer_index] = byte & self.DATA_MASK
             self.buffer_index += 1
             self.state = State.DATA5
-            
+
         elif self.state == State.DATA5:
             self.buffer[self.buffer_index] = byte & self.DATA_MASK
             if self.calculate_checksum(self.buffer) == self.expected_checksum:
                 value = (
-                    ((self.buffer[0] & self.DATA_MASK) << 28) |
-                    ((self.buffer[1] & self.DATA_MASK) << 21) |
-                    ((self.buffer[2] & self.DATA_MASK) << 14) |
-                    ((self.buffer[3] & self.DATA_MASK) << 7) |
-                    (self.buffer[4] & self.DATA_MASK)
+                    ((self.buffer[0] & self.DATA_MASK) << 28)
+                    | ((self.buffer[1] & self.DATA_MASK) << 21)
+                    | ((self.buffer[2] & self.DATA_MASK) << 14)
+                    | ((self.buffer[3] & self.DATA_MASK) << 7)
+                    | (self.buffer[4] & self.DATA_MASK)
                 )
-                ret = bytes([
-                    (value >> 24) & 0xFF,
-                    (value >> 16) & 0xFF,
-                    (value >> 8) & 0xFF,
-                    value & 0xFF
-                ])
+                ret = bytes([(value >> 24) & 0xFF, (value >> 16) & 0xFF, (value >> 8) & 0xFF, value & 0xFF])
             self.state = State.HEADER_CHECKSUM
 
         return ret

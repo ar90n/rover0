@@ -3,53 +3,50 @@ import tempfile
 from pathlib import Path
 
 from ament_index_python.packages import get_package_share_directory
-
-from launch.actions import AppendEnvironmentVariable, GroupAction
-from launch import LaunchDescription, LaunchDescriptionEntity, condition
+from launch import LaunchDescription, LaunchDescriptionEntity
 from launch.actions import (
+    AppendEnvironmentVariable,
     DeclareLaunchArgument,
-    IncludeLaunchDescription,
     ExecuteProcess,
-    RegisterEventHandler,
+    GroupAction,
+    IncludeLaunchDescription,
     OpaqueFunction,
+    RegisterEventHandler,
 )
+from launch.conditions import IfCondition, UnlessCondition
+from launch.event_handlers import OnShutdown
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch_ros.descriptions import ParameterValue
-from launch_ros.actions import Node, LoadComposableNodes
 from launch.substitutions import (
     Command,
-    FindExecutable,
-    PathJoinSubstitution,
-    LaunchConfiguration,
-    IfElseSubstitution,
-    PythonExpression,
     EqualsSubstitution,
+    FindExecutable,
+    IfElseSubstitution,
+    LaunchConfiguration,
     NotEqualsSubstitution,
+    PathJoinSubstitution,
+    PythonExpression,
 )
+from launch_ros.actions import LoadComposableNodes, Node
+from launch_ros.descriptions import ComposableNode, ParameterFile, ParameterValue
 from launch_ros.substitutions import FindPackageShare
-from launch.conditions import IfCondition, UnlessCondition
-from launch_ros.descriptions import ComposableNode, ParameterFile
-from launch_ros.substitutions.find_package import FindPackage
-from launch.event_handlers import OnShutdown
 from nav2_common.launch import RewrittenYaml
 
 
 def generate_launch_description():
-    bringup_dir = get_package_share_directory("nav2_bringup")
-    bringup_dir2 = get_package_share_directory("nav2_minimal_tb3_sim")
-    bringup_dir3 = get_package_share_directory("robot_localization")
-    bringup_dir4 = get_package_share_directory("rover0_bringup")
-    sim_dir = get_package_share_directory("nav2_minimal_tb3_sim")
+    nav2_bringup_dir = get_package_share_directory("nav2_bringup")
+    nav2_minimal_tb3_sim_dir = get_package_share_directory("nav2_minimal_tb3_sim")
+    bringup_dir = get_package_share_directory("rover0_bringup")
+    nav2_minimal_tb3_sim_dir = get_package_share_directory("nav2_minimal_tb3_sim")
 
     declared_arguments = [
         DeclareLaunchArgument("prefix", default_value='""', description="Prefix to be added to the robot description"),
         DeclareLaunchArgument(
             "map",
-            default_value=os.path.join(bringup_dir, "maps", "tb3_sandbox.yaml"),
+            default_value=os.path.join(nav2_bringup_dir, "maps", "tb3_sandbox.yaml"),
         ),
         DeclareLaunchArgument(
             "world",
-            default_value=os.path.join(sim_dir, "worlds", "tb3_sandbox.sdf.xacro"),
+            default_value=os.path.join(nav2_minimal_tb3_sim_dir, "worlds", "tb3_sandbox.sdf.xacro"),
             description="Full path to world model file to load",
         ),
         DeclareLaunchArgument("use_sim", default_value="False", description="Use gazebo sim"),
@@ -57,18 +54,18 @@ def generate_launch_description():
         DeclareLaunchArgument("headless", default_value="False", description="Whether to execute gzclient)"),
         DeclareLaunchArgument(
             "nav2_params_file",
-            default_value=os.path.join(bringup_dir4, "config", "nav2.yaml"),
+            default_value=os.path.join(bringup_dir, "config", "nav2.yaml"),
             description="Full path to the ROS2 parameters for navigation2",
         ),
         DeclareLaunchArgument(
             "ekf_params_file",
-            default_value=os.path.join(bringup_dir4, "config", "ekf.yaml"),
+            default_value=os.path.join(bringup_dir, "config", "ekf.yaml"),
             description="Full path to the ROS2 parameters for ekf",
         ),
         DeclareLaunchArgument("log_level", default_value="info", description="log level"),
     ]
 
-    prefix = LaunchConfiguration("prefix")
+    prefix = LaunchConfiguration("prefix")  # noqa: F841
     map_yaml_file = LaunchConfiguration("map")
     world = LaunchConfiguration("world")
     use_sim = LaunchConfiguration("use_sim")
@@ -339,9 +336,11 @@ def generate_launch_description():
         output="screen",
     )
 
-    set_env_vars_resources = AppendEnvironmentVariable("GZ_SIM_RESOURCE_PATH", os.path.join(bringup_dir2, "models"))
+    set_env_vars_resources = AppendEnvironmentVariable(
+        "GZ_SIM_RESOURCE_PATH", os.path.join(nav2_minimal_tb3_sim_dir, "models")
+    )
     set_env_vars_resources2 = AppendEnvironmentVariable(
-        "GZ_SIM_RESOURCE_PATH", str(Path(os.path.join(bringup_dir2)).parent.resolve())
+        "GZ_SIM_RESOURCE_PATH", str(Path(os.path.join(nav2_minimal_tb3_sim_dir)).parent.resolve())
     )
 
     nodes: list[LaunchDescriptionEntity] = [

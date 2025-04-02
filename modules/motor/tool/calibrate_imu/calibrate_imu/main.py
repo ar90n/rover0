@@ -1,6 +1,6 @@
 import sys
+from dataclasses import asdict, dataclass
 from time import sleep
-from dataclasses import dataclass, asdict
 
 from serial import Serial
 
@@ -41,6 +41,7 @@ static_covariance_angular_velocity:
   - 0.0
   - {var_gyro_z}"""
 
+
 @dataclass(frozen=True)
 class CalibrationData:
     mean_acc_x: float
@@ -58,7 +59,7 @@ class CalibrationData:
 
 
 class Stats:
-    def __init__(self) :
+    def __init__(self):
         self._acc: float = 0.0
         self._sq_acc: float = 0.0
         self._count: float = 0
@@ -70,9 +71,10 @@ class Stats:
 
     def mean(self) -> float:
         return self._acc / self._count
-    
+
     def variance(self) -> float:
         return self._sq_acc / self._count - self.mean() * self.mean()
+
 
 class ImuMsgHandler:
     def __init__(self):
@@ -109,7 +111,7 @@ class ImuMsgHandler:
             pass
         else:
             raise ValueError(f"Unknown IMU data: {msg.param}")
-        
+
     def get_calibration_data(self) -> CalibrationData:
         return CalibrationData(
             mean_acc_x=self._acc_x_stats.mean(),
@@ -126,6 +128,7 @@ class ImuMsgHandler:
             var_gyro_z=self._gyro_z_stats.variance(),
         )
 
+
 def main(serial_port: Serial, num_samples: int = 8192) -> None:
     request_query: list[ImuMsg] = [
         ImuMsg(type=MessageType.IMU, param=ImuData.AccelX, value=0),
@@ -133,10 +136,10 @@ def main(serial_port: Serial, num_samples: int = 8192) -> None:
         ImuMsg(type=MessageType.IMU, param=ImuData.AccelZ, value=0),
         ImuMsg(type=MessageType.IMU, param=ImuData.GyroX, value=0),
         ImuMsg(type=MessageType.IMU, param=ImuData.GyroY, value=0),
-        ImuMsg(type=MessageType.IMU, param=ImuData.GyroZ, value=0)
+        ImuMsg(type=MessageType.IMU, param=ImuData.GyroZ, value=0),
     ]
     imu_handler: ImuMsgHandler = ImuMsgHandler()
-    msg_parser: MsgParser = MsgParser() 
+    msg_parser: MsgParser = MsgParser()
 
     for i in range(num_samples):
         for msg in request_query:
