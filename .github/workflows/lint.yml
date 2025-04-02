@@ -19,10 +19,9 @@ jobs:
     
     - name: Install dependencies
       run: |
-        cd modules/rover0
         apt-get update
         rosdep update
-        rosdep install --from-paths  modules/rover0/src -y -r
+        rosdep install --from-paths  modules/rover0/ -y -r
 
         
     - name: Run ament_lint
