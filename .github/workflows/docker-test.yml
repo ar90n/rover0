@@ -28,7 +28,6 @@ jobs:
     
     - name: Build image (without pushing)
       uses: docker/build-push-action@v4
-      continue-on-error: true
       with:
         context: modules
         file: modules/${{ matrix.module }}/Dockerfile
@@ -40,7 +39,6 @@ jobs:
         
     - name: Test ARM64 build
       uses: docker/build-push-action@v4
-      continue-on-error: true  # Don't fail the workflow if ARM64 build fails
       with:
         context: modules
         file: modules/${{ matrix.module }}/Dockerfile

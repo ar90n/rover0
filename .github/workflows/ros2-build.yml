@@ -19,14 +19,18 @@ jobs:
     
     - name: Install dependencies
       run: |
-        apt-get update || true
-        apt-get install -y python3-pip python3-colcon-common-extensions || true
-        rosdep update || true
+        # Fix for ROS Jazzy
+        echo "deb http://archive.ubuntu.com/ubuntu/ noble main restricted universe multiverse" > /etc/apt/sources.list.d/ubuntu-archive.list
+        echo "deb http://archive.ubuntu.com/ubuntu/ noble-updates main restricted universe multiverse" >> /etc/apt/sources.list.d/ubuntu-archive.list
+        echo "deb http://archive.ubuntu.com/ubuntu/ noble-security main restricted universe multiverse" >> /etc/apt/sources.list.d/ubuntu-archive.list
+        apt-get update
+        apt-get install -y python3-pip python3-colcon-common-extensions
+        rosdep update
         
     - name: Install ROS dependencies
       run: |
         cd modules/rover0
-        rosdep install -y -r --from-paths src -t build -t buildtool -t exec --ignore-src --rosdistro $ROS_DISTRO || true
+        rosdep install -y -r --from-paths src -t build -t buildtool -t exec --ignore-src --rosdistro $ROS_DISTRO
         
     - name: Build ROS2 packages
       run: |
@@ -38,10 +42,6 @@ jobs:
       run: |
         cd modules/rover0
         . /opt/ros/$ROS_DISTRO/setup.sh
-        if [ -d "install" ]; then
-          . install/setup.sh
-          colcon test || true
-          colcon test-result --verbose || true
-        else
-          echo "No install directory found, skipping tests"
-        fi
+        . install/setup.sh
+        colcon test
+        colcon test-result --verbose

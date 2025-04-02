@@ -19,9 +19,13 @@ jobs:
     
     - name: Install dependencies
       run: |
-        apt-get update || true
-        apt-get install -y python3-pip python3-colcon-common-extensions || true
-        apt-get install -y ament-lint-auto ament-lint-common || true
+        # Fix for ROS Jazzy
+        echo "deb http://archive.ubuntu.com/ubuntu/ noble main restricted universe multiverse" > /etc/apt/sources.list.d/ubuntu-archive.list
+        echo "deb http://archive.ubuntu.com/ubuntu/ noble-updates main restricted universe multiverse" >> /etc/apt/sources.list.d/ubuntu-archive.list
+        echo "deb http://archive.ubuntu.com/ubuntu/ noble-security main restricted universe multiverse" >> /etc/apt/sources.list.d/ubuntu-archive.list
+        apt-get update
+        apt-get install -y python3-pip python3-colcon-common-extensions
+        apt-get install -y ament-lint-auto ament-lint-common
         
     - name: Run ament_lint
       run: |

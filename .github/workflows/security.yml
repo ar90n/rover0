@@ -23,22 +23,20 @@ jobs:
         scan-type: 'config'
         scan-ref: '.'
         format: 'table'
-        exit-code: '0'  # Don't fail the build
+        exit-code: '1'
         ignore-unfixed: true
-        severity: 'CRITICAL,HIGH'
+        severity: 'CRITICAL'
     
     - name: Run Trivy vulnerability scanner for Docker images
       uses: aquasecurity/trivy-action@master
-      continue-on-error: true
       with:
         scan-type: 'fs'
         scan-ref: '.'
         format: 'sarif'
         output: 'trivy-results.sarif'
-        severity: 'CRITICAL,HIGH'
+        severity: 'CRITICAL'
     
     - name: Upload Trivy scan results to GitHub Security tab
       uses: github/codeql-action/upload-sarif@v2
-      continue-on-error: true
       with:
         sarif_file: 'trivy-results.sarif'

@@ -46,7 +46,6 @@ jobs:
     
     - name: Build and push
       uses: docker/build-push-action@v4
-      continue-on-error: true
       with:
         context: modules
         file: modules/${{ matrix.module }}/Dockerfile
