@@ -9,7 +9,7 @@ RUN --mount=type=cache,target=/var/lib/apt,sharing=locked \
     --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=bind,source=./rover0/src,target=/tmp/modules/rover0/src \
     apt-get update && \
-    rosdep update && \
+    rosdep update --rosdistro=$ROS_DISTRO && \
     rosdep install -y -r --from-paths /tmp/modules/rover0/src -t build -t buildtool -t exec
 
 ENTRYPOINT ["tail", "-f", "/dev/null"]
@@ -31,7 +31,7 @@ RUN --mount=type=cache,target=/var/lib/apt,sharing=locked \
     --mount=type=bind,source=./rover0/src,target=/tmp/modules/rover0/src \
     apt-get update && \
     . "/opt/ros/$ROS_DISTRO/setup.sh" && \
-    rosdep update && \
+    rosdep update --rosdistro=$ROS_DISTRO && \
     rosdep install -y -r --from-paths /tmp/modules/rover0/src -t exec
 
 COPY --from=build /opt/rover0 /opt/rover0
