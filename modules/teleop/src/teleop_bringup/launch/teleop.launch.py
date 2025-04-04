@@ -69,6 +69,37 @@ def generate_launch_description():
 
     use_sim_time = IfElseSubstitution(use_sim, if_value="True", else_value="False")
 
+    joy_teleop_node = Node(
+        package='joy_teleop',
+        executable='joy_teleop',
+        name='joy_teleop',
+        parameters=[{
+            "move": {
+                "type": "topic",
+                "interface_type": "geometry_msgs/msg/Twist",
+                "topic_name": "cmd_vel_teleop",
+                "deadman_buttons": [5],
+                "axis_mappings":{
+                    "linear-x": {
+                        "axis": 1,
+                        "scale": 1.0,
+                        "offset": 0.0,
+                    },
+                    "linear-y": {
+                        "axis": 0,
+                        "scale": 1.0,
+                        "offset": 0.0,
+                    },
+                    "angular-z": {
+                        "axis": 2,
+                        "scale": 1.0,
+                        "offset": 0.0,
+                    }
+                },
+            },
+            'use_sim_time': use_sim_time
+        }],
+    )
 
     teleop_nodes = GroupAction(
         actions=[
@@ -142,6 +173,7 @@ def generate_launch_description():
     #)
 
     nodes: list[LaunchDescriptionEntity] = [
+        joy_teleop_node,
         teleop_nodes,
     ]
 

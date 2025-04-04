@@ -294,12 +294,18 @@ def generate_launch_description():
                         plugin="nav2_controller::ControllerServer",
                         name="controller_server",
                         parameters=[nav2_configured_params, {"use_sim_time": use_sim_time}],
+                        remappings=[
+                            ('/cmd_vel', '/cmd_vel_nav2'),
+                        ]
                     ),
                     ComposableNode(
                         package="nav2_behaviors",
                         plugin="behavior_server::BehaviorServer",
                         name="behavior_server",
                         parameters=[nav2_configured_params, {"use_sim_time": use_sim_time}],
+                        remappings=[
+                            ('/cmd_vel', '/cmd_vel_nav2'),
+                        ]
                     ),
                     ComposableNode(
                         package="nav2_bt_navigator",
@@ -329,6 +335,24 @@ def generate_launch_description():
                 ],
             ),
         ],
+    )
+
+    twist_mux_node = Node(
+        package="twist_mux",
+        executable="twist_mux",
+        name="twist_mux",
+        parameters=[{
+            "topics": {
+                "nav2": {"topic": "/cmd_vel_nav2", "timeout": 2.5, "priority": 50},
+                "teleop": {"topic": "/cmd_vel_teleop", "timeout": 2.5, "priority": 100},
+            },
+            "use_stamped": False,
+            "use_sim_time": use_sim_time
+        }],
+        remappings=[
+            ('/cmd_vel_out', '/cmd_vel')
+        ],
+        output="screen",
     )
 
     static_odom_to_base_footprint_pub = Node(
@@ -361,6 +385,7 @@ def generate_launch_description():
         spawn_entity_node,
         nav2_composable_nodes,
         ekf_node,
+        twist_mux_node,
         static_odom_to_base_footprint_pub,
     ]
 
