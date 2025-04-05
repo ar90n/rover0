@@ -8,7 +8,7 @@ x-environment: &environment
 services:
   rover0:
     <<: *base
-    image: rover0/rover0
+    image: ghcr.io/ar90n/rover0-rover0
     build:
       context: modules
       dockerfile: rover0/Dockerfile
@@ -22,9 +22,10 @@ services:
     working_dir: /modules/rover0
     environment:
       <<: *environment
+    command: rover0.launch.py
   teleop:
     <<: *base
-    image: rover0/teleop
+    image: ghcr.io/ar90n/rover0-teleop
     build:
       context: modules
       dockerfile: teleop/Dockerfile
@@ -67,7 +68,7 @@ services:
       FOXGLOVE_WS_PORT: ${FOXGLOVE_WS_PORT:-8765}
   uros-agent-lidar:
     <<: *base
-    image: rover0/uros-agent-lidar
+    image: ghcr.io/ar90n/rover0-uros-agent-lidar
     build:
       context: modules
       dockerfile: uros-agent-lidar/Dockerfile

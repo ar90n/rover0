@@ -4,3 +4,5 @@ services:
     build:
       target: dev
     container_name: teleop-dev
+    entrypoint: tail -f /dev/null
+    command: ""
