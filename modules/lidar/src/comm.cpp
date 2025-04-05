@@ -52,30 +52,19 @@ void lidar_fetch_task()
   xv11::DataPacket packet;
   while (lidar.process(&packet))
   {
-    // Send data to Core0 via FIFO
-    // First word: angle_quad (16 bits) + first distance (16 bits)
-    uint32_t word1 = (static_cast<uint32_t>(packet.angle_quad) << 16) | (packet.distances[0] & 0xFFFF);
-    multicore_fifo_push_blocking(word1);
+    size_t const   base_index{ (4 * packet.angle_quad) % 360 };
+    uint32_t const words[]{
+      (static_cast<uint32_t>(base_index + 0) << 16) | (packet.distances[0] & 0xFFFF),
+      (static_cast<uint32_t>(base_index + 1) << 16) | (packet.distances[1] & 0xFFFF),
+      (static_cast<uint32_t>(base_index + 2) << 16) | (packet.distances[2] & 0xFFFF),
+      (static_cast<uint32_t>(base_index + 3) << 16) | (packet.distances[3] & 0xFFFF),
+      (0xFFFF0000 | (static_cast<uint32_t>(packet.timestamp_us) & 0xFFFF)),
+    };
 
-    // Second word: second distance (16 bits) + third distance (16 bits)
-    uint32_t word2 = (static_cast<uint32_t>(packet.distances[1]) << 16) | (packet.distances[2] & 0xFFFF);
-    multicore_fifo_push_blocking(word2);
-
-    // Third word: fourth distance (16 bits) + first intensity (16 bits)
-    uint32_t word3 = (static_cast<uint32_t>(packet.distances[3]) << 16) | (packet.signals[0] & 0xFFFF);
-    multicore_fifo_push_blocking(word3);
-
-    // Fourth word: second intensity (16 bits) + third intensity (16 bits)
-    uint32_t word4 = (static_cast<uint32_t>(packet.signals[1]) << 16) | (packet.signals[2] & 0xFFFF);
-    multicore_fifo_push_blocking(word4);
-
-    // Fifth word: fourth intensity (16 bits)
-    uint32_t word5 = (static_cast<uint32_t>(packet.signals[3]) << 16);
-    multicore_fifo_push_blocking(word5);
-
-    // Sixth word: timestamp (32 bits)
-    uint32_t word6 = packet.timestamp_us;
-    multicore_fifo_push_blocking(word6);
+    for (auto const& word : words)
+    {
+      multicore_fifo_push_blocking(word);
+    }
   }
 }
 

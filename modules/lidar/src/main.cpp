@@ -81,58 +81,26 @@ void lidar_receive_task(rcl_timer_t* timer, int64_t last_call_time)
     return;
   }
 
-  // Check if there's data in the FIFO
-  while (6 <= intercore_fifo.size())
+  while (intercore_fifo.has_data())
   {
-    // Read the first word: angle_quad (16 bits) + first distance (16 bits)
-    uint32_t word1      = intercore_fifo.read();
-    uint16_t angle_quad = word1 >> 16;
-    uint16_t distance1  = word1 & 0xFFFF;
+    uint32_t const word  = intercore_fifo.read();
+    uint16_t const index = (word >> 16) & 0xFFFF;
+    uint16_t const value = word & 0xFFFF;
 
-    // Read the second word: second distance (16 bits) + third distance (16 bits)
-    uint32_t word2     = intercore_fifo.read();
-    uint16_t distance2 = word2 >> 16;
-    uint16_t distance3 = word2 & 0xFFFF;
-
-    // Read the third word: fourth distance (16 bits) + first intensity (16 bits)
-    uint32_t word3      = intercore_fifo.read();
-    uint16_t distance4  = word3 >> 16;
-    uint16_t intensity1 = word3 & 0xFFFF;
-
-    // Read the fourth word: second intensity (16 bits) + third intensity (16 bits)
-    uint32_t word4      = intercore_fifo.read();
-    uint16_t intensity2 = word4 >> 16;
-    uint16_t intensity3 = word4 & 0xFFFF;
-
-    // Read the fifth word: fourth intensity (16 bits)
-    uint32_t word5      = intercore_fifo.read();
-    uint16_t intensity4 = word5 >> 16;
-
-    // Read the sixth word: timestamp (32 bits)
-    uint32_t word6        = intercore_fifo.read();
-    uint32_t timestamp_us = word6;
-
-    // Calculate offset in the arrays
-    size_t const offset        = (4 * angle_quad) % 360;
-    float const  distanceScale = 1.0 / 1000.0f;
-
-    // Store the data in the arrays
-    distances[offset]     = distanceScale * distance1;
-    distances[offset + 1] = distanceScale * distance2;
-    distances[offset + 2] = distanceScale * distance3;
-    distances[offset + 3] = distanceScale * distance4;
-
-    intensities[offset]     = intensity1;
-    intensities[offset + 1] = intensity2;
-    intensities[offset + 2] = intensity3;
-    intensities[offset + 3] = intensity4;
-
-    // Calculate duration for time_increment
-    if (last_timestamp_us > 0)
+    constexpr float const dst_scale = 1.0 / 1000.0f;
+    if (0 <= index && index < 360)
     {
-      duration = (timestamp_us - last_timestamp_us) / 1000000.0 / 4.0;
+      distances[index] = value * dst_scale;
     }
-    last_timestamp_us = timestamp_us;
+    else if (index == 0xFFFF) // 0xFFFF means timestamp
+    {
+      uint32_t const timestamp_us = value;
+      if (last_timestamp_us > 0)
+      {
+        duration = (timestamp_us - last_timestamp_us) / 1000000.0 / 4.0;
+      }
+      last_timestamp_us = timestamp_us;
+    }
   }
 }
 
@@ -170,8 +138,7 @@ void                        publish_timer_callback(rcl_timer_t* timer, int64_t l
 
   for (int i = 0; i < 360; i++)
   {
-    msg.ranges.data[i]      = distances[i];
-    msg.intensities.data[i] = intensities[i];
+    msg.ranges.data[i] = distances[i];
   }
 
   RCSOFTCHECK(rcl_publish(&publisher, &msg, NULL));
