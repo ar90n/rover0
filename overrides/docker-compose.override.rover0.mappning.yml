@@ -1,0 +1,4 @@
+services:
+  rover0:
+    container_name: rover0-mapping
+    command: rover0.mapping.launch.py

@@ -42,7 +42,7 @@ COPY <<EOF /entrypoint.sh
 . "/opt/ros/$ROS_DISTRO/setup.sh"
 . "/opt/rover0/local_setup.sh"
 
-exec ros2 launch rover0_bringup rover0.launch.py
+exec ros2 launch rover0_bringup "\$@"
 EOF
 
 ENTRYPOINT ["/bin/sh", "/entrypoint.sh"]

@@ -12,10 +12,13 @@ from launch.actions import (
     ExecuteProcess,
     RegisterEventHandler,
     OpaqueFunction,
+    EmitEvent,
+    RegisterEventHandler,
+    LogInfo
 )
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.descriptions import ParameterValue
-from launch_ros.actions import Node
+from launch_ros.actions import Node, LifecycleNode
 from launch.substitutions import (
     Command,
     FindExecutable,
@@ -28,7 +31,11 @@ from launch_ros.substitutions import FindPackageShare
 from launch.conditions import IfCondition, UnlessCondition
 from launch_ros.descriptions import ParameterFile
 from launch_ros.substitutions.find_package import FindPackage
+from launch_ros.event_handlers import OnStateTransition
+from launch_ros.events.lifecycle import ChangeState
+from lifecycle_msgs.msg import Transition
 from launch.event_handlers import OnShutdown
+from launch.events import matches_action
 
 from nav2_common.launch import RewrittenYaml
 
@@ -222,17 +229,48 @@ def generate_launch_description():
         remappings=[("/odometry/filtered", "/odom")],
     )
 
-    slam_toolbox_node = Node(
+    slam_toolbox_configured_params = ParameterFile(
+        RewrittenYaml(
+            source_file=slam_params_file,
+            param_rewrites={},
+            convert_types=True,
+        ),
+        allow_substs=True,
+    )
+    slam_toolbox_node = LifecycleNode(
         package="slam_toolbox",
-        executable="sync_slam_toolbox_node",
+        executable="async_slam_toolbox_node",
         name="slam_toolbox",
         output="screen",
         parameters=[
-            slam_params_file,
+            slam_toolbox_configured_params,
             {"use_sim_time": use_sim_time},
         ],
+        namespace=''
         # if needed
         # remappings=[("scan", "scan")]
+    )
+
+    configure_event = EmitEvent(
+        event=ChangeState(
+          lifecycle_node_matcher=matches_action(slam_toolbox_node),
+          transition_id=Transition.TRANSITION_CONFIGURE
+        ),
+    )
+
+    activate_event = RegisterEventHandler(
+        OnStateTransition(
+            target_lifecycle_node=slam_toolbox_node,
+            start_state="configuring",
+            goal_state="inactive",
+            entities=[
+                LogInfo(msg="[LifecycleLaunch] Slamtoolbox node is activating."),
+                EmitEvent(event=ChangeState(
+                    lifecycle_node_matcher=matches_action(slam_toolbox_node),
+                    transition_id=Transition.TRANSITION_ACTIVATE
+                ))
+            ]
+        ),
     )
 
     static_odom_to_base_footprint_pub = Node(
@@ -265,6 +303,8 @@ def generate_launch_description():
         spawn_entity_node,
         ekf_node,
         slam_toolbox_node,
+        configure_event,
+        activate_event,
         static_odom_to_base_footprint_pub,
     ]
 
