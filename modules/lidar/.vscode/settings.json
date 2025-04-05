@@ -21,6 +21,7 @@
     "cortex-debug.variableUseNaturalFormat": false,
     "files.associations": {
         "optional": "cpp",
-        "string": "cpp"
+        "string": "cpp",
+        "numbers": "cpp"
     }
 }
