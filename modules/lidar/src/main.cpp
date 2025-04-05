@@ -65,8 +65,8 @@ auto intercore_fifo = device::Core0IntercoreFIFO::instance();
 
 namespace
 {
-float      distances[360];
-float      intensities[360];
+float      distances[360]    = { 0 };
+float      intensities[360]  = { 0 };
 uint32_t   last_timestamp_us = 0;
 static int sec               = 0;
 float      duration          = 0;
@@ -120,17 +120,19 @@ void                        publish_timer_callback(rcl_timer_t* timer, int64_t l
     return;
   }
 
-  rosidl_runtime_c__String__assign(&msg.header.frame_id, "lidar");
+  rosidl_runtime_c__String__assign(&msg.header.frame_id, "rover0_lidar_link");
+  int64_t time_ns = rmw_uros_epoch_nanos();
+  msg.header.stamp.sec = (int32_t)(time_ns / 1000000000);
+  msg.header.stamp.nanosec = (int32_t)(time_ns % 1000000000);
   msg.ranges.data          = range_data;
   msg.ranges.capacity      = 360;
   msg.ranges.size          = 360;
   msg.intensities.data     = intensity_data;
   msg.intensities.capacity = 360;
   msg.intensities.size     = 360;
-  msg.header.stamp.sec     = sec++;
-  msg.angle_min            = 3.14 / 1;
-  msg.angle_max            = -3.14 / 1;
-  msg.angle_increment      = -2 * 3.14 / 360;
+  msg.angle_min            = -std::numbers::pi;
+  msg.angle_max            = std::numbers::pi;
+  msg.angle_increment      = (msg.angle_max - msg.angle_min) / (360 - 1);
   msg.time_increment       = duration;
   msg.scan_time            = msg.time_increment * 360;
   msg.range_min            = 0.15;
@@ -154,15 +156,13 @@ void error_loop()
   }
 }
 
-extern Gpio<Config::LED_PIN> gpio_led;
-
 int main()
 {
-  intercore_fifo.init();
-
   // Launch Core1 for LiDAR control
   sleep_ms(1000);
   multicore_launch_core1(comm_main);
+
+  intercore_fifo.init();
 
   uRosTransport trns(uart_ctrl, 230400);
   rmw_uros_set_custom_transport(
@@ -189,6 +189,8 @@ int main()
   rclc_support_t support;
   RCCHECK(rclc_support_init_with_options(&support, 0, NULL, &init_options, &allocator));
 
+  RCCHECK(rmw_uros_sync_session(1000));
+
   // create node
   rcl_node_t node;
   RCCHECK(rclc_node_init_default(&node, "lidar", "", &support));
@@ -213,11 +215,11 @@ int main()
 
   // create lidar_receive_timer
   rcl_timer_t        lidar_receive_timer;
-  const unsigned int lidar_receive_timeout = 5; // Check more frequently for FIFO data
+  const unsigned int lidar_receive_timeout = 200;
   RCCHECK(rclc_timer_init_default(
     &lidar_receive_timer,
     &support,
-    RCL_MS_TO_NS(lidar_receive_timeout),
+    RCL_US_TO_NS(lidar_receive_timeout),
     lidar_receive_task
   ));
 
@@ -227,9 +229,10 @@ int main()
   RCCHECK(rclc_executor_add_timer(&executor, &publish_timer));
   RCCHECK(rclc_executor_add_timer(&executor, &lidar_receive_timer));
 
-  while (true)
-  {
-    RCSOFTCHECK(rclc_executor_spin_some(&executor, RCL_MS_TO_NS(1)));
-  }
+  rclc_executor_spin(&executor);
+
+  RCCHECK(rcl_publisher_fini(&publisher, &node));
+  RCCHECK(rcl_node_fini(&node));
+
   return 0;
 }

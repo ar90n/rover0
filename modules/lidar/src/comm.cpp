@@ -75,9 +75,9 @@ void comm_entry()
   uart_lidar.init(115200);
 
   TaskRunner{ create_scheduled_task<500>(heartbeat_task),
-              create_scheduled_task<10>(lidar_fetch_task),
-              create_scheduled_task<50>(lidar_motor_control_task) }
-    .run_forever();
+              create_scheduled_task<1>(lidar_fetch_task),
+              create_scheduled_task<10>(lidar_motor_control_task) }
+    .run_forever(0);
 }
 
 } // namespace
