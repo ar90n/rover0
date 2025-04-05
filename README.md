@@ -9,7 +9,7 @@ A ROS2-based autonomous rover platform with navigation capabilities.
 
 Rover0 is a DIY rover platform built with ROS2 (Robot Operating System 2) that integrates:
 
-- Differential drive motor control
+- Mecanum wheel control
 - LiDAR-based mapping and navigation
 - IMU-based localization
 - Teleoperation capabilities
@@ -23,7 +23,7 @@ The system is designed to run on a Raspberry Pi with hardware interfaces for mot
 - Raspberry Pi Pico (motor controller)
 - XV11 LiDAR sensor
 - IMU sensor
-- Differential drive motors with encoders
+- Mecanum wheels with encoders
 - Custom motor driver board
 
 ## Software Architecture
@@ -32,7 +32,7 @@ The project is organized into several modules:
 
 - **rover0**: Main rover control and ROS2 integration
 - **motor**: Motor control firmware for Raspberry Pi Pico
-- **lidar**: LiDAR sensor interface
+- **lidar**: LiDAR sensor control firmware for Raspberry Pi Pico with micro-ROS
 - **teleop**: Teleoperation interface
 - **uros-agent-lidar**: Micro-ROS agent for LiDAR communication
 
@@ -68,22 +68,27 @@ The project is organized into several modules:
 docker-compose up
 ```
 
-#### Development Mode
-
-```bash
-docker-compose -f docker-compose.yml -f overrides/docker-compose.override.rover0.dev.yml up
-```
-
 #### Mapping Mode
 
 ```bash
 docker-compose -f docker-compose.yml -f overrides/docker-compose.override.rover0.mappning.yml up
 ```
 
-#### Teleoperation
+#### Development Mode
 
+rover0 module
+```bash
+docker-compose -f docker-compose.yml -f overrides/docker-compose.override.rover0.dev.yml up
+```
+
+teleop module
 ```bash
 docker-compose -f docker-compose.yml -f overrides/docker-compose.override.teleop.dev.yml up
+```
+
+uros-agent-lidar module
+```bash
+docker-compose -f docker-compose.yml -f overrides/docker-compose.override.uros-agent-lidarp.dev.yml up
 ```
 
 ## Features
@@ -103,16 +108,6 @@ docker-compose -f docker-compose.yml -f overrides/docker-compose.override.teleop
 - `/overrides`: Docker Compose override files for different configurations
 - `/root`: System configuration files
 
-### Building the Firmware
-
-For the motor controller:
-
-```bash
-cd modules/motor
-mkdir build && cd build
-cmake ..
-make
-```
 
 ## Contributing
 
