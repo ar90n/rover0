@@ -17,7 +17,6 @@ The Teleop module is responsible for:
 
 - **teleop_bringup**: Launch files and configurations for the teleoperation system
 - **ros_camera**: Interface for the Raspberry Pi Camera
-- **ffmpeg_image_transport**: Video compression and streaming
 - **foxglove_bridge**: WebSocket server for Foxglove Studio integration
 
 ### Third-party Components
@@ -30,7 +29,6 @@ The Teleop module is responsible for:
 ### Camera Streaming
 
 - Supports Raspberry Pi Camera Module
-- H.264 video compression for efficient streaming
 - Configurable resolution and frame rate
 - Camera calibration for accurate visualization
 
@@ -52,7 +50,6 @@ The Teleop module is responsible for:
 
 - Raspberry Pi (4 or newer recommended)
 - Raspberry Pi Camera Module
-- USB Joystick/Gamepad (optional)
 
 ## Docker Integration
 
@@ -105,7 +102,6 @@ Key parameters that can be configured:
 
 - ROS2 Jazzy
 - libcamera development environment
-- ffmpeg
 - Foxglove Bridge
 
 ### Building from Source
