@@ -18,7 +18,7 @@ public:
   }
 
   bool push(T const &value) {
-    if (count == Size) {  // キューが満杯かどうかは count で判断
+    if (count == Size) {
       return false;
     }
     new (get(tail)) T(std::move(value));
