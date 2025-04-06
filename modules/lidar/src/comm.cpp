@@ -21,7 +21,7 @@ auto uart_lidar = UartLidar::instance();
 // LiDAR data processing functions
 xv11::ReturnType read_byte_from_serial()
 {
-  if (!uart_lidar.has_data())
+  if (!uart_lidar.has_rx_data())
   {
     return std::make_pair(false, static_cast<uint8_t>(0));
   }

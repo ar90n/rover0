@@ -42,7 +42,7 @@ void run()
       transport::send(bytes);
     }
 
-    while (::uart_control.has_data())
+    while (::uart_control.has_rx_data())
     {
       auto const byte{ ::uart_control.read() };
       if (auto const recv{ transport::consume(byte) }; recv.has_value())

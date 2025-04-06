@@ -21,7 +21,7 @@ struct Config
   static constexpr uint  UART_CONTROL                     = 0;
   static constexpr uint  UART_CONTROL_TX_PIN              = 16;
   static constexpr uint  UART_CONTROL_RX_PIN              = 17;
-  static constexpr uint  UART_BUFFER_SIZE                 = 256;
+  static constexpr uint  UART_BUFFER_SIZE                 = 1024;
   static constexpr uint  I2C_IMU                          = 0;
   static constexpr uint  I2C_IMU_SDA                      = 20;
   static constexpr uint  I2C_IMU_SCL                      = 21;
@@ -30,8 +30,8 @@ struct Config
   static constexpr uint  LED_HEARTBEAT_WORKER_INTERVAL_MS = 500;
   static constexpr uint  MOTOR_CONTROL_WORKER_INTERVAL_MS = 10;
   static constexpr uint  IMU_CONTROL_WORKER_INTERVAL_MS   = 20;
-  static constexpr uint  INTERCORE_FIFO_SIZE              = 128;
-  static constexpr uint  QUEUE_SIZE                       = 128;
+  static constexpr uint  INTERCORE_FIFO_SIZE              = 1024;
+  static constexpr uint  QUEUE_SIZE                       = 1024;
   static constexpr float MOTOR_DRIVER_PID_KP              = 0.2;
   static constexpr float MOTOR_DRIVER_PID_KI              = 0.005;
   static constexpr float MOTOR_DRIVER_PID_KD              = 0.030;

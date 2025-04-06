@@ -11,7 +11,8 @@ using UartControl = Uart<
   Config::UART_LIDAR,
   Config::UART_CONTROL_TX_PIN,
   Config::UART_CONTROL_RX_PIN,
-  Config::UART_BUFFER_SIZE>;
+  Config::UART_BUFFER_SIZE,
+  false>;
 using UartLidar =
   Uart<Config::UART_CONTROL, Config::UART_LIDAR_RX_PIN, Config::UART_LIDAR_RX_PIN, Config::UART_BUFFER_SIZE>;
 using GpioPWM            = Gpio<Config::PWM_PIN, GPIO_FUNC_PWM>;

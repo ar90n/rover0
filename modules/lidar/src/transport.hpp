@@ -10,7 +10,7 @@ template<typename T>
 concept TransportImpl = requires(T t, uint baurate, uint8_t* buf, size_t len, int timeout) {
   { t.init(baurate) } -> std::same_as<void>;
   { t.close() } -> std::same_as<void>;
-  { t.write(buf, len) } -> std::same_as<void>;
+  { t.write(buf, len) } -> std::same_as<size_t>;
   { t.read(buf, len, timeout) } -> std::same_as<size_t>;
 };
 
@@ -49,8 +49,7 @@ public:
   {
     if (auto* self = static_cast<UartTransport*>(transport->args))
     {
-      self->uart.write(buf, len);
-      return len;
+      return self->uart.write(buf, len);
     }
 
     return 0;

@@ -12,7 +12,7 @@ struct Config
   static constexpr uint32_t UART_CONTROL        = 0;
   static constexpr uint32_t UART_CONTROL_TX_PIN = 4;
   static constexpr uint32_t UART_CONTROL_RX_PIN = 5;
-  static constexpr uint32_t UART_BUFFER_SIZE    = 1024;
+  static constexpr uint32_t UART_BUFFER_SIZE    = 4096;
   static constexpr uint32_t INTERCORE_FIOF_SIZE = 1024;
   static constexpr uint32_t ROS_DOMAIN_ID       = 104;
   static constexpr uint32_t LIDAR_RPM           = 270;
