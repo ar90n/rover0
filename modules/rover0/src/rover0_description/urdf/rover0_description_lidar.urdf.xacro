@@ -54,7 +54,7 @@
         <joint name="${prefix}_lidar_mount_joint" type="fixed">
             <parent link="${parent}"/>
             <child link="${prefix}_lidar_mount_link"/>
-            <origin xyz="${x_off} 0 ${(base_height + mount_height)/2}" rpy="0 0 0"/>
+            <origin xyz="${x_off} 0 ${(base_height + mount_height)/2}" rpy="0 0 ${radians(180)}"/>
         </joint>
 
         <joint name="${prefix}_lidar_joint" type="fixed">
