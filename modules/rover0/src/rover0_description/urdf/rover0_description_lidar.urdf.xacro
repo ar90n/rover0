@@ -60,7 +60,7 @@
         <joint name="${prefix}_lidar_joint" type="fixed">
             <parent link="${prefix}_lidar_mount_link"/>
             <child link="${prefix}_lidar_link"/>
-            <origin xyz="0 0 ${(mount_height + lidar_height) / 2}" rpy="0 0 0"/>
+            <origin xyz="0 0 ${(mount_height + lidar_height) / 2}" rpy="0 ${radians(180)} 0"/>
         </joint>
     </xacro:macro>
 </robot>
