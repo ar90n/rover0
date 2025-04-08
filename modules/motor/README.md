@@ -61,9 +61,9 @@ The firmware is organized into several components:
 The motor controller implements a PID (Proportional-Integral-Derivative) control system for precise motor speed regulation. The PID parameters are configurable in `config.hpp`:
 
 ```cpp
-static constexpr float MOTOR_DRIVER_PID_KP = 0.2;
-static constexpr float MOTOR_DRIVER_PID_KI = 0.005;
-static constexpr float MOTOR_DRIVER_PID_KD = 0.030;
+static constexpr float MOTOR_DRIVER_PID_KP = 0.100;
+static constexpr float MOTOR_DRIVER_PID_KI = 0.085;
+static constexpr float MOTOR_DRIVER_PID_KD = 0.020;
 ```
 
 ### Task Scheduling

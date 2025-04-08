@@ -26,13 +26,13 @@ struct Config
   static constexpr uint  I2C_IMU_SDA                      = 20;
   static constexpr uint  I2C_IMU_SCL                      = 21;
   static constexpr uint  I2C_IMU_BAUDRATE                 = 400 * 1000;
-  static constexpr uint  EMERGENCY_WORKER_INTERVAL_MS     = 10;
+  static constexpr uint  EMERGENCY_WORKER_INTERVAL_MS     = 20;
   static constexpr uint  LED_HEARTBEAT_WORKER_INTERVAL_MS = 500;
-  static constexpr uint  MOTOR_CONTROL_WORKER_INTERVAL_MS = 10;
+  static constexpr uint  MOTOR_CONTROL_WORKER_INTERVAL_MS = 20;
   static constexpr uint  IMU_CONTROL_WORKER_INTERVAL_MS   = 20;
   static constexpr uint  INTERCORE_FIFO_SIZE              = 1024;
   static constexpr uint  QUEUE_SIZE                       = 1024;
-  static constexpr float MOTOR_DRIVER_PID_KP              = 0.2;
-  static constexpr float MOTOR_DRIVER_PID_KI              = 0.005;
-  static constexpr float MOTOR_DRIVER_PID_KD              = 0.030;
+  static constexpr float MOTOR_DRIVER_PID_KP              = 0.100;
+  static constexpr float MOTOR_DRIVER_PID_KI              = 0.085;
+  static constexpr float MOTOR_DRIVER_PID_KD              = 0.020;
 };
